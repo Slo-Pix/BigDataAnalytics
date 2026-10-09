@@ -20,3 +20,10 @@ dataset/
 └── curated/                      joined analysis tables handed to analytics (Phase 4)
 ```
 Column definitions: [../docs/schema.md](../docs/schema.md).
+
+## Known data quirks
+- **steam/games.csv** (Kaggle fronkongames, v53, 125,855 games): the header has 39 names but every row has 40
+  values, because the header merges `Discount` and `DLC count` into `DiscountDLC count`. Replace that header
+  name with the two columns when reading, or every column after `Price` is shifted by one.
+- **steam/games.json** is the same data as one large JSON object keyed by AppID (not line-delimited),
+  so Spark can't split it; convert it to JSONL first if it's needed.

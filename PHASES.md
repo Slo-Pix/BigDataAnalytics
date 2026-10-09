@@ -13,7 +13,7 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 - [~] IMDb TSVs (basics, ratings, akas, principals) → `dataset/raw/imdb/`
 - [ ] RARBG catalog dump (SQLite) → `dataset/raw/rarbg/`
 - [~] Wikipedia hourly pageviews, 7–14 days → `dataset/raw/wikipedia/pageviews_hourly/`
-- [ ] Kaggle Steam games dataset → `dataset/raw/steam/`  (needs Kaggle login)
+- [x] Kaggle Steam games dataset → `dataset/raw/steam/` (games.csv 401 MB, 125,855 games; games.json 965 MB)
 - [ ] TMDB release dates for top 5–10k titles → `dataset/raw/tmdb/`  (B, needs TMDB API key)
 - [~] **Tracker scraper (BEP 15 UDP) running 24/7 → JSONL** `dataset/stream/jsonl/` (built + tested; waiting on RARBG hash list)
 
