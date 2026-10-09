@@ -3,7 +3,7 @@
 # Usage: download_wiki_pageviews.sh 2026-09-01 7
 set -euo pipefail
 START="${1:-2026-09-01}"; DAYS="${2:-7}"
-OUT="$(dirname "$0")/../data/raw/wiki"; mkdir -p "$OUT"
+OUT="$(dirname "$0")/../dataset/raw/wikipedia/pageviews_hourly"; mkdir -p "$OUT"
 for d in $(seq 0 $((DAYS - 1))); do
   day=$(date -u -d "$START + $d day" +%Y%m%d)
   ym=$(date -u -d "$START + $d day" +%Y/%Y-%m)

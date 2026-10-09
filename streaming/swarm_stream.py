@@ -1,7 +1,7 @@
 """Speed layer: Kafka `tracker.scrapes` -> Spark Structured Streaming -> Parquet + Postgres.
 
 Two queries share one Kafka source:
-  1. lake    : raw rows appended to data/stream/swarm (Parquet, partitioned by date)
+  1. lake    : raw rows appended to dataset/stream/swarm (Parquet, partitioned by date)
   2. serving : per-batch aggregates upserted into Postgres for Grafana
                (swarm_minute time series + swarm_latest snapshot). Each batch_id is recorded
                in stream_batches inside the same transaction, so replays after a crash are skipped.

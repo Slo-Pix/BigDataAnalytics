@@ -4,18 +4,18 @@ Derived from `BDA_Project_Plan.pdf` (1-week scope). Owner: A = Shubham (data eng
 Status: `[ ]` todo · `[~]` in progress · `[x]` done
 
 ## Phase 0 — Foundation (Day 1, A)
-- [x] Repo layout: `ingest/ etl/ streaming/ analysis/ dashboards/ report/ infra/ data/`
+- [x] Repo layout: `ingest/ etl/ streaming/ analysis/ dashboards/ report/ infra/ dataset/ logs/`
 - [x] Python env (`uv`) with PySpark, guessit, kafka client
 - [x] Schema contract between A and B → `docs/schema.md`
 - [x] Spark local smoke test (local[*], 12 cores)
 
 ## Phase 1 — Data acquisition (Day 1–2, A + B)  ← START FIRST
-- [~] IMDb TSVs (basics, ratings, akas, principals) → `data/raw/imdb/`
-- [ ] RARBG catalog dump (SQLite) → `data/raw/rarbg/`
-- [~] Wikipedia hourly pageviews, 7–14 days → `data/raw/wiki/`
-- [ ] Kaggle Steam games dataset → `data/raw/steam/`  (needs Kaggle login)
-- [ ] TMDB release dates for top 5–10k titles → `data/raw/tmdb/`  (B, needs TMDB API key)
-- [~] **Tracker scraper (BEP 15 UDP) running 24/7 → JSONL** `data/stream/jsonl/` (built + tested; waiting on RARBG hash list)
+- [~] IMDb TSVs (basics, ratings, akas, principals) → `dataset/raw/imdb/`
+- [ ] RARBG catalog dump (SQLite) → `dataset/raw/rarbg/`
+- [~] Wikipedia hourly pageviews, 7–14 days → `dataset/raw/wikipedia/pageviews_hourly/`
+- [ ] Kaggle Steam games dataset → `dataset/raw/steam/`  (needs Kaggle login)
+- [ ] TMDB release dates for top 5–10k titles → `dataset/raw/tmdb/`  (B, needs TMDB API key)
+- [~] **Tracker scraper (BEP 15 UDP) running 24/7 → JSONL** `dataset/stream/jsonl/` (built + tested; waiting on RARBG hash list)
 
 ## Phase 2 — Batch ETL to Parquet (Day 3, A)
 - [ ] RARBG → `staging/torrents` (dedup by infohash, category normalisation)
@@ -29,7 +29,7 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] Spark Structured Streaming: Kafka → Parquet `stream/swarm` (by date) + Postgres serving tables, 1-min trigger
 - [x] Exactly-once into Postgres via `stream_batches` (replay test passed)
 - [x] Grafana "Live Torrent Swarms" dashboard provisioned, all 8 panel queries verified
-- [ ] Go live: start scraper container + `streaming/run_stream.sh start` once `data/raw/infohashes.txt` exists
+- [ ] Go live: start scraper container + `streaming/run_stream.sh start` once `dataset/raw/scrape_targets/infohashes.txt` exists
 - [ ] HDFS profile (`--profile hdfs`) — written, not yet tested (big image pull; optional per plan)
 
 ## Phase 4 — Integration / curated tables (Day 4, A → handoff to B)

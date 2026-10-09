@@ -2,7 +2,7 @@
 
 B writes analyses against these tables; A guarantees the columns. Add columns freely, never rename/remove without telling the other person.
 
-Paths are relative to `data/`.
+Paths are relative to `dataset/`.
 
 ## staging/torrents  (partitioned by `category`)
 | column      | type      | notes |

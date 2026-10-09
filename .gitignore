@@ -1,4 +1,6 @@
-data/
+dataset/*
+!dataset/README.md
+logs/
 .venv/
 __pycache__/
 *.pyc

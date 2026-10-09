@@ -13,16 +13,16 @@ docker compose -f infra/docker-compose.yml up -d   # Kafka :9092, Postgres :5432
 ```bash
 ingest/download_imdb.sh
 ingest/download_wiki_pageviews.sh 2026-09-01 7
-uv run python -m ingest.export_infohashes --n 100000   # needs data/raw/rarbg/rarbg_db.sqlite
+uv run python -m ingest.export_infohashes --n 100000   # needs dataset/raw/rarbg/rarbg_db.sqlite
 ```
 
 ## Speed layer (Phase 3)
 ```
 tracker_scraper (container, hourly rounds, BEP 15 UDP)
-   ├─> data/stream/jsonl/<date>/<hour>.jsonl          raw backup
+   ├─> dataset/stream/jsonl/<date>/<hour>.jsonl          raw backup
    └─> Kafka topic tracker.scrapes (6 partitions, 7-day retention)
           └─> Spark Structured Streaming (streaming/swarm_stream.py, 1-min micro-batches)
-                 ├─> data/stream/swarm/date=…/*.parquet   data lake (append)
+                 ├─> dataset/stream/swarm/date=…/*.parquet   data lake (append)
                  └─> Postgres swarm_minute / swarm_latest  serving layer -> Grafana "Live Torrent Swarms"
 ```
 ```bash

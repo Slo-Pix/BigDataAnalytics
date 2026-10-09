@@ -1,13 +1,13 @@
 """BEP 15 UDP tracker scraper.
 
 Repeatedly scrapes seeders / completed / leechers for a list of infohashes from public
-UDP trackers and appends rows to hourly JSONL files (data/stream/jsonl/<date>/<hour>.jsonl).
+UDP trackers and appends rows to hourly JSONL files (dataset/stream/jsonl/<date>/<hour>.jsonl).
 With --kafka, rows are also published to the `tracker.scrapes` topic.
 
 Only aggregate swarm counts are collected: no peer IPs, no content.
 
 Usage:
-    uv run python -m ingest.tracker_scraper --hashes data/raw/infohashes.txt
+    uv run python -m ingest.tracker_scraper --hashes dataset/raw/scrape_targets/infohashes.txt
     uv run python -m ingest.tracker_scraper --hashes ... --kafka localhost:9092
 """
 import argparse

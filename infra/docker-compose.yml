@@ -79,10 +79,10 @@ services:
     container_name: scraper
     user: "${UID:-1000}:${GID:-1000}"
     command: >
-      python -m ingest.tracker_scraper --hashes /data/raw/infohashes.txt
+      python -m ingest.tracker_scraper --hashes /data/raw/scrape_targets/infohashes.txt
       --kafka kafka:19092 --interval 3600
     environment: {BDA_DATA: /data}
-    volumes: [../data:/data]
+    volumes: [../dataset:/data]
     depends_on: {kafka-init: {condition: service_completed_successfully}}
     restart: unless-stopped
 

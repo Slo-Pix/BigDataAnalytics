@@ -1,9 +1,9 @@
 """Export the scrape target list from the RARBG SQLite dump.
 
 Picks the N most recent movie / TV / game torrents (recent torrents still have live swarms)
-and writes one infohash per line to data/raw/infohashes.txt for the tracker scraper.
+and writes one infohash per line to dataset/raw/scrape_targets/infohashes.txt for the tracker scraper.
 
-Usage: uv run python -m ingest.export_infohashes --db data/raw/rarbg/rarbg_db.sqlite --n 100000
+Usage: uv run python -m ingest.export_infohashes --db dataset/raw/rarbg/rarbg_db.sqlite --n 100000
 """
 import argparse
 import sqlite3
@@ -25,7 +25,7 @@ def main():
         "ORDER BY dt DESC LIMIT ?",
         (args.n,),
     ).fetchall()
-    out = RAW / "infohashes.txt"
+    out = RAW / "scrape_targets" / "infohashes.txt"
     out.write_text("\n".join(r[0].lower() for r in rows) + "\n")
     print(f"wrote {len(rows)} hashes to {out}")
 
