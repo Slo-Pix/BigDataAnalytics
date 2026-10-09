@@ -14,7 +14,7 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 - [ ] RARBG catalog dump (SQLite) → `dataset/raw/rarbg/`
 - [~] Wikipedia hourly pageviews, 7–14 days → `dataset/raw/wikipedia/pageviews_hourly/`
 - [x] Kaggle Steam games dataset → `dataset/raw/steam/` (games.csv 401 MB, 125,855 games; games.json 965 MB)
-- [ ] TMDB release dates for top 5–10k titles → `dataset/raw/tmdb/`  (B, needs TMDB API key)
+- [~] TMDB release dates, top 8k movies + 2k TV (IMDb votes, 2005–2023) → `dataset/raw/tmdb/` (`ingest/fetch_tmdb.py`, running)
 - [~] **Tracker scraper (BEP 15 UDP) running 24/7 → JSONL** `dataset/stream/jsonl/` (built + tested; waiting on RARBG hash list)
 
 ## Phase 2 — Batch ETL to Parquet (Day 3, A)

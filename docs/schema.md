@@ -43,3 +43,9 @@ Paths are relative to `dataset/`.
 `imdb_id, tmdb_id, theatrical_date, digital_date, physical_date`
 
 No peer IPs are ever stored. No content is downloaded — metadata only.
+
+### Note on TMDB release dates (for leak-lag)
+`dataset/raw/tmdb/tmdb_raw.jsonl` keeps *every* release date for every country. US digital (type 4) is
+often missing for pre-2013 films or is a much later re-release (e.g. The Avengers 2012 → US digital 2024).
+Define **home_release = earliest type 4 or 5 date in any country that falls on/after the first theatrical date**,
+and treat titles without one as missing rather than dropping the filter.
