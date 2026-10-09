@@ -24,9 +24,13 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 - [ ] Delete raw `.gz` once converted
 
 ## Phase 3 — Streaming / speed layer (Day 2–3, A)
-- [ ] Docker Compose: Kafka (KRaft) [+ HDFS optional] + Grafana + Postgres
-- [ ] Scraper publishes to topic `tracker.scrapes`
-- [ ] Spark Structured Streaming: Kafka → Parquet `stream/swarm` every minute
+- [x] Docker Compose: Kafka 3.9 (KRaft) + Postgres 16 + Grafana 13 — running, healthy
+- [x] Scraper publishes to topic `tracker.scrapes` (also containerised, `--profile scraper`, restarts on reboot)
+- [x] Spark Structured Streaming: Kafka → Parquet `stream/swarm` (by date) + Postgres serving tables, 1-min trigger
+- [x] Exactly-once into Postgres via `stream_batches` (replay test passed)
+- [x] Grafana "Live Torrent Swarms" dashboard provisioned, all 8 panel queries verified
+- [ ] Go live: start scraper container + `streaming/run_stream.sh start` once `data/raw/infohashes.txt` exists
+- [ ] HDFS profile (`--profile hdfs`) — written, not yet tested (big image pull; optional per plan)
 
 ## Phase 4 — Integration / curated tables (Day 4, A → handoff to B)
 - [ ] torrents ⨝ IMDb ⨝ TMDB ⨝ Wikipedia ⨝ Steam → `curated/*`

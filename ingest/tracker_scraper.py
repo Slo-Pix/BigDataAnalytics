@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
-from common.spark import STREAM
+from common.paths import STREAM
 
 PROTOCOL_ID = 0x41727101980
 ACTION_CONNECT, ACTION_SCRAPE, ACTION_ERROR = 0, 2, 3
@@ -98,7 +98,8 @@ class UDPTracker:
 class Sink:
     """Writes rows to hourly JSONL files and optionally Kafka."""
 
-    def __init__(self, kafka: str | None):
+    def __init__(self, kafka: str | None, topic: str = "tracker.scrapes"):
+        self.topic = topic
         self.fh, self.fh_key = None, None
         self.lock = threading.Lock()
         self.producer = None
@@ -128,7 +129,7 @@ class Sink:
                 rec = {"infohash": h, "tracker": tracker, "seeders": s, "completed": c, "leechers": l, "scraped_at": ts}
                 fh.write(json.dumps(rec) + "\n")
                 if self.producer:
-                    self.producer.send("tracker.scrapes", rec)
+                    self.producer.send(self.topic, rec)
 
     def flush(self):
         with self.lock:
@@ -177,11 +178,12 @@ def main():
     ap.add_argument("--trackers", nargs="*", default=DEFAULT_TRACKERS)
     ap.add_argument("--interval", type=int, default=3600, help="seconds between round starts")
     ap.add_argument("--kafka", default=None, help="bootstrap servers, e.g. localhost:9092")
+    ap.add_argument("--topic", default="tracker.scrapes")
     ap.add_argument("--once", action="store_true", help="run a single round and exit")
     args = ap.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    sink = Sink(args.kafka)
+    sink = Sink(args.kafka, args.topic)
 
     while True:
         start = time.monotonic()

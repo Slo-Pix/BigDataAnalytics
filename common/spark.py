@@ -1,16 +1,22 @@
 """Shared SparkSession factory and data paths."""
-from pathlib import Path
+import os
+import time
 
 from pyspark.sql import SparkSession
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data"
-RAW, STAGING, CURATED, STREAM = (DATA / d for d in ("raw", "staging", "curated", "stream"))
+from common.paths import CURATED, DATA, RAW, ROOT, STAGING, STREAM  # noqa: F401  (re-exported)
+
+# PySpark converts collected timestamps to the Python process's local zone; keep everything UTC.
+os.environ["TZ"] = "UTC"
+time.tzset()
 
 
-def get_spark(app: str = "torrent-bda", mem: str = "8g") -> SparkSession:
+def get_spark(app: str = "torrent-bda", mem: str = "8g", packages: str | None = None) -> SparkSession:
+    builder = SparkSession.builder
+    if packages:
+        builder = builder.config("spark.jars.packages", packages)
     return (
-        SparkSession.builder.appName(app)
+        builder.appName(app)
         .master("local[*]")
         .config("spark.driver.memory", mem)
         .config("spark.sql.shuffle.partitions", "48")

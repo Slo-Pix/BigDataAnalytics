@@ -8,7 +8,7 @@ Usage: uv run python -m ingest.export_infohashes --db data/raw/rarbg/rarbg_db.sq
 import argparse
 import sqlite3
 
-from common.spark import RAW
+from common.paths import RAW
 
 
 def main():
