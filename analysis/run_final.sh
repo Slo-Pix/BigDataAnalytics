@@ -8,4 +8,6 @@ step etl.curate_swarm           # live slots / per-torrent day stats + full-scan
 for a in a1_activity a2_leak_lag a3_decay a4_wiki_interest a5_games a6_genres a7_swarm_day; do
   step "analysis.$a"
 done
-echo "$(date '+%T') done: figures in report/figures, tables in analysis/results"
+step dashboards.load_results            # results -> Postgres schema `analytics`
+step dashboards.build_batch_dashboard   # Grafana "Batch Analytics" JSON
+echo "$(date '+%T') done: figures in report/figures, tables in analysis/results, Grafana refreshed"
