@@ -303,5 +303,5 @@ app.mount("/", StaticFiles(directory=STATIC, html=True), name="static")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORTAL_PORT", "8800"))
-    print(f"TorrentScope portal: http://localhost:{port}")
+    print(f"Dashboard: http://localhost:{port}")
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")

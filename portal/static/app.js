@@ -1,4 +1,4 @@
-// TorrentScope portal — vanilla JS, no external libraries (works offline).
+// Project dashboard — vanilla JS, no external libraries (works offline).
 const $ = (s, el = document) => el.querySelector(s);
 const page = $("#page");
 const nf = new Intl.NumberFormat("en-US");
@@ -78,7 +78,7 @@ let timer = null;
 const every = (ms, fn) => { clearInterval(timer); fn(); timer = setInterval(fn, ms); };
 
 pages.overview = {
-  title: "Overview", sub: "The whole system at a glance — every number is read live",
+  title: "Overview",
   async render() {
     page.innerHTML = `<div class="grid kpis" id="k"></div>
       <div class="grid two"><div class="card"><div class="card-head"><h2>Live collection, 10 Oct 2026 — rows streamed per 30 min</h2><a class="btn ghost" href="#stream">Open stream</a></div><div id="c"></div></div>
@@ -105,7 +105,7 @@ pages.overview = {
 
 let streamSchema = "demo";
 pages.stream = {
-  title: "Live stream", sub: "Speed layer: scraper → Kafka → Spark Structured Streaming → PostgreSQL",
+  title: "Live stream",
   async render() {
     page.innerHTML = `<div class="card-head" style="margin-bottom:16px"><div class="seg" id="seg"><button data-s="demo">Demo (live)</button><button data-s="public">10 Oct collection</button></div>
       <div style="display:flex;gap:8px"><button class="btn" id="go">Start demo</button><a class="btn ghost" href="http://localhost:3000/d/live-demo" target="_blank">Grafana</a><a class="btn ghost" href="http://localhost:4040" target="_blank">Spark UI</a></div></div>
@@ -137,7 +137,7 @@ pages.stream = {
 
 let kafkaTopic = null;
 pages.kafka = {
-  title: "Kafka", sub: "Topics, partitions and the latest raw messages flowing through the broker",
+  title: "Kafka",
   async render() {
     page.innerHTML = `<div class="grid kpis" id="k"></div><div class="grid two"><div class="card"><div class="card-head"><h2>Latest messages</h2><select id="sel" class="btn ghost"></select></div><div class="scroll" id="m"></div></div>
       <div class="card"><div class="card-head"><h2>Topics &amp; partitions</h2><a class="btn" href="http://localhost:8080" target="_blank">Open Kafka UI</a></div><div id="tp"></div></div></div>`;
@@ -161,7 +161,7 @@ pages.kafka = {
 };
 
 pages.dataset = {
-  title: "Dataset", sub: "The Parquet data lake on disk — row counts and schemas read live from the files",
+  title: "Dataset",
   async render() {
     page.innerHTML = `<div class="grid kpis" id="k"></div><div class="grid two"><div class="card"><div class="card-head"><h2>Tables</h2><span class="muted">click a row to preview</span></div><div id="tl"></div></div>
       <div class="card"><div class="card-head"><h2 id="sn">Schema</h2></div><div class="scroll" id="sc"><div class="empty">Pick a table</div></div></div></div>
@@ -188,7 +188,7 @@ pages.dataset = {
 };
 
 pages.sql = {
-  title: "Spark SQL", sub: "Ad-hoc queries over every table — run by a live SparkSession (local[*], 12 cores)",
+  title: "Spark SQL",
   async render() {
     page.innerHTML = `<div class="grid two" style="grid-template-columns:minmax(0,1fr) minmax(0,2fr)"><div class="card"><div class="card-head"><h2>Prepared queries</h2></div><div class="qlist" id="q"></div></div>
       <div class="card"><div class="card-head"><h2>Query</h2><div style="display:flex;gap:8px;align-items:center"><span id="st" class="muted"></span><a class="btn ghost" href="http://localhost:4041" target="_blank">Spark UI</a><button class="btn" id="run">Run ▶</button></div></div>
@@ -223,7 +223,7 @@ const FINDINGS = [
   ["A7 · Swarms through the day", "Film / TV within ±1.5% · games +11%", "Fixed panel of 110,705 torrents on opentrackr, 12:40–20:50 IST, 10 Oct 2026. Leechers per seeder: TV 0.42, movie 0.35, game 0.24.", "a7_swarm_day.png"],
 ];
 pages.findings = {
-  title: "Findings", sub: "Seven analyses with Spark SQL and Spark MLlib — and the 26 checks that back them",
+  title: "Findings",
   async render() {
     clearInterval(timer);
     page.innerHTML = `<div class="grid half">${FINDINGS.map(([t, big, txt, img]) => `<div class="card finding"><h3>${esc(t)}</h3><div class="big">${esc(big)}</div><p>${esc(txt)}</p><img src="/figures/${img}" alt="${esc(t)} chart" loading="lazy"></div>`).join("")}
@@ -251,7 +251,7 @@ const TOOLS = [
   ["✓", "Validation suite", "26 automated checks: reconciliation, stream integrity, tracker agreement, spot checks.", [["Results", "#findings"]], null],
 ];
 pages.tools = {
-  title: "Tools", sub: "Every big-data tool in the pipeline, with live status and links",
+  title: "Tools",
   async render() {
     clearInterval(timer);
     const s = await api("/api/services");
@@ -291,7 +291,6 @@ function route() {
   const p = pages[name] || pages.overview;
   document.querySelectorAll("#nav a").forEach((a) => a.classList.toggle("on", a.dataset.page === (pages[name] ? name : "overview")));
   $("#title").textContent = p.title;
-  $("#subtitle").textContent = p.sub;
   p.render().catch((e) => (page.innerHTML = `<div class="card err">${esc(e.message)}</div>`));
 }
 $("#lightbox").onclick = () => ($("#lightbox").hidden = true);
