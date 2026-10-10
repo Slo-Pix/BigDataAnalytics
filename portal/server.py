@@ -1,6 +1,8 @@
 """Project portal: a local web app that shows the running big-data system live.
 
-  http://localhost:8000   (binds to 127.0.0.1 only — it can start/stop the demo and run Spark SQL)
+  http://localhost:8800   (binds to 127.0.0.1 only — it can start/stop the demo and run Spark SQL;
+                           port 8800, not 8000, so it never shares a browser origin with other local apps;
+                           override with PORTAL_PORT)
 
 Data comes live from: PostgreSQL (stream serving tables, schemas public + demo), Kafka (topics, end offsets,
 latest messages), the Parquet data lake (row counts, schemas, row previews via pyarrow), Docker (container
@@ -9,6 +11,7 @@ status), and Spark SQL (a SparkSession started on the first query, with every ta
 Usage: uv run python -m portal.server
 """
 import csv
+import os
 import json
 import socket
 import subprocess
@@ -299,4 +302,6 @@ app.mount("/", StaticFiles(directory=STATIC, html=True), name="static")
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
+    port = int(os.environ.get("PORTAL_PORT", "8800"))
+    print(f"TorrentScope portal: http://localhost:{port}")
+    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")

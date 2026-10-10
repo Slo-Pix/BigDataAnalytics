@@ -8,9 +8,9 @@ Parquet folder (`dataset/stream/demo`) and PostgreSQL schema (`demo`), so the re
 ```bash
 cd ~/Downloads/bda_pro
 docker compose -f infra/docker-compose.yml up -d     # Kafka, Kafka UI, PostgreSQL, Grafana
-uv run python -m portal.server                       # the project portal: http://localhost:8000
+uv run python -m portal.server                       # the project portal: http://localhost:8800
 ```
-Open **http://localhost:8000** and press **Start demo** in the sidebar (or run `demo/live_demo.sh start`).
+Open **http://localhost:8800** and press **Start demo** in the sidebar (or run `demo/live_demo.sh start`).
 The portal is the single entry point: Overview → Live stream → Kafka (raw messages) → Dataset (row previews)
 → Spark SQL (run queries in the browser) → Findings → Tools (links to Grafana, Kafka UI :8080, Spark UI :4040/:4041).
 The terminal console below and the Grafana dashboards show the same things in the classic tools.

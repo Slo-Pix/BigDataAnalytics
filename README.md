@@ -76,7 +76,7 @@ uv run python -m analysis.validate
 ## Project portal and live demo (for the presentation)
 
 ```bash
-uv run python -m portal.server   # http://localhost:8000 — overview, live stream, Kafka messages, dataset browser,
+uv run python -m portal.server   # http://localhost:8800 — overview, live stream, Kafka messages, dataset browser,
                                  # Spark SQL in the browser, findings, links to Grafana / Kafka UI (:8080) / Spark UI
 ```
 
