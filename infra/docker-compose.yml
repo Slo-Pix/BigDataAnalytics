@@ -80,7 +80,7 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     command: >
       python -m ingest.tracker_scraper --hashes /data/raw/scrape_targets/infohashes.txt
-      --kafka kafka:19092 --interval 3600
+      --kafka kafka:19092 --interval ${SCRAPE_INTERVAL:-60}
     environment: {BDA_DATA: /data}
     volumes: [../dataset:/data]
     depends_on: {kafka-init: {condition: service_completed_successfully}}
