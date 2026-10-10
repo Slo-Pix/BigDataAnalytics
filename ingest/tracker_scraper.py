@@ -27,6 +27,8 @@ from common.paths import STREAM
 PROTOCOL_ID = 0x41727101980
 ACTION_CONNECT, ACTION_SCRAPE, ACTION_ERROR = 0, 2, 3
 MAX_HASHES_PER_SCRAPE = 74  # keeps the packet under typical MTU
+# trackers that reject large scrape packets (measured: exodus fails above ~60 hashes)
+BATCH_SIZE = {"exodus.desync.com:6969": 50}
 CONN_ID_TTL = 50  # seconds; BEP 15 says 60
 REQUEST_GAP = 0.1  # seconds between scrape requests to one tracker
 MAX_CONSECUTIVE_ERRORS = 25  # a tracker is treated as down for the round only after this many in a row
@@ -151,7 +153,9 @@ def load_hashes(path: Path, limit: int | None) -> list[str]:
     return hashes[:limit] if limit else hashes
 
 
-def scrape_tracker(hostport: str, batches: list[list[str]], sink: Sink) -> int:
+def scrape_tracker(hostport: str, hashes: list[str], sink: Sink) -> int:
+    size = BATCH_SIZE.get(hostport, MAX_HASHES_PER_SCRAPE)
+    batches = [hashes[i : i + size] for i in range(0, len(hashes), size)]
     try:
         tr = UDPTracker(hostport)
     except OSError as e:
@@ -195,10 +199,9 @@ def main():
     while True:
         start = time.monotonic()
         hashes = load_hashes(args.hashes, args.limit)  # re-read each round so the list can grow
-        batches = [hashes[i : i + MAX_HASHES_PER_SCRAPE] for i in range(0, len(hashes), MAX_HASHES_PER_SCRAPE)]
         # trackers in parallel; each tracker's batches sequentially (be polite)
         with ThreadPoolExecutor(len(args.trackers)) as pool:
-            counts = dict(zip(args.trackers, pool.map(lambda t: scrape_tracker(t, batches, sink), args.trackers)))
+            counts = dict(zip(args.trackers, pool.map(lambda t: scrape_tracker(t, hashes, sink), args.trackers)))
         sink.flush()
         log.info("round done in %.0fs, %d hashes: %s", time.monotonic() - start, len(hashes), counts)
         if args.once:
