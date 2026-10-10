@@ -10,11 +10,11 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] Spark local smoke test (local[*], 12 cores)
 
 ## Phase 1 — Data acquisition (Day 1–2, A + B)  ← START FIRST
-- [~] IMDb TSVs (basics, ratings, akas, principals) → `dataset/raw/imdb/`
+- [x] IMDb TSVs (basics, ratings, akas, principals) → `dataset/raw/imdb/`
 - [ ] RARBG catalog dump (SQLite) → `dataset/raw/rarbg/`
-- [~] Wikipedia hourly pageviews, 7–14 days → `dataset/raw/wikipedia/pageviews_hourly/`
+- [x] Wikipedia hourly pageviews, 7 days (2026-09-01..07, 168 files, 9.9 GB) → `dataset/raw/wikipedia/pageviews_hourly/`
 - [x] Kaggle Steam games dataset → `dataset/raw/steam/` (games.csv 401 MB, 125,855 games; games.json 965 MB)
-- [~] TMDB release dates, top 8k movies + 2k TV (IMDb votes, 2005–2023) → `dataset/raw/tmdb/` (`ingest/fetch_tmdb.py`, running)
+- [x] TMDB release dates, top 8k movies + 2k TV (IMDb votes, 2005–2023) → `dataset/raw/tmdb/` (9,956 found, 19 not found)
 - [~] **Tracker scraper (BEP 15 UDP) running 24/7 → JSONL** `dataset/stream/jsonl/` (built + tested; waiting on RARBG hash list)
 
 ## Phase 2 — Batch ETL to Parquet (Day 3, A)
