@@ -25,7 +25,7 @@ def main():
     ap.add_argument("--dst", default=str(DST))
     args = ap.parse_args()
 
-    spark = get_spark("etl-wiki-pageviews", mem="8g")
+    spark = get_spark("etl-wiki-pageviews", mem="5g")
     t0 = time.time()
 
     parts = F.split("value", " ")

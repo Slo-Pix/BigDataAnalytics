@@ -36,7 +36,7 @@ def main():
     ap.add_argument("--skip-principals", action="store_true")
     args = ap.parse_args()
 
-    spark = get_spark("etl-imdb", mem="8g")
+    spark = get_spark("etl-imdb", mem="6g")
     c = F.col
     t0 = time.time()
 
