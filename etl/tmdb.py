@@ -50,17 +50,29 @@ def main():
         .withColumn("home_release_date", F.least("digital_date", "physical_date"))
     )
 
+    # India-specific window (theatrical and home release both in IN)
+    in_rel = rel.where(c("country") == "IN")
+    in_th = in_rel.where(c("type").isin(2, 3)).groupBy("imdb_id").agg(F.min("date").alias("in_theatrical_date"))
+    india = (
+        in_th.join(in_rel.where(c("type").isin(4, 5)), "imdb_id", "left")
+        .groupBy("imdb_id", "in_theatrical_date")
+        .agg(F.min(F.when(c("date") >= c("in_theatrical_date"), c("date"))).alias("in_home_release_date"))
+    )
+
     to_date = lambda col: F.try_to_timestamp(c(col), F.lit("yyyy-MM-dd")).cast("date")  # noqa: E731
     titles = (
         raw.select(
-            "imdb_id", "kind", "tmdb_id", "title", "imdb_title", "imdb_year", "imdb_votes", "imdb_rating",
+            "imdb_id", "kind", F.coalesce(c("source"), F.lit("imdb_top")).alias("source"), "discover_language",
+            "tmdb_id", "title", "imdb_title", "imdb_year", "imdb_votes", "imdb_rating",
             "popularity", "original_language", "genres", "runtime", "budget", "revenue",
             to_date("first_air_date").alias("first_air_date"), to_date("last_air_date").alias("last_air_date"),
             "number_of_seasons", "number_of_episodes", "networks", "in_production",
         )
         .join(theatrical, "imdb_id", "left")
         .join(home, "imdb_id", "left")
+        .join(india, "imdb_id", "left")
         .withColumn("theatrical_to_home_days", F.datediff("home_release_date", "theatrical_date"))
+        .withColumn("in_theatrical_to_home_days", F.datediff("in_home_release_date", "in_theatrical_date"))
     )
     titles.write.mode("overwrite").parquet(str(STAGING / "tmdb_titles"))
 
@@ -75,6 +87,10 @@ def main():
     t.where("kind = 'movie'").groupBy((F.floor(c("imdb_year") / 5) * 5).alias("period")).agg(
         F.count("*").alias("n"), F.percentile_approx("theatrical_to_home_days", 0.5).alias("median_days_to_home"),
     ).orderBy("period").show()
+    t.where("kind = 'movie'").groupBy("source").agg(
+        F.count("*").alias("movies"), F.count("in_theatrical_to_home_days").alias("with_india_window"),
+        F.percentile_approx("in_theatrical_to_home_days", 0.5).alias("india_median_days"),
+    ).show()
     spark.stop()
 
 

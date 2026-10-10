@@ -87,6 +87,21 @@ class TMDB:
         raise RuntimeError(f"giving up on {path}")
 
 
+def movie_fields(d: dict) -> dict:
+    """Fields kept from a /movie/{id}?append_to_response=release_dates response."""
+    return {
+        "status": "ok", "tmdb_id": d.get("id"), "title": d.get("title"),
+        "release_date": d.get("release_date"), "runtime": d.get("runtime"),
+        "budget": d.get("budget"), "revenue": d.get("revenue"),
+        "popularity": d.get("popularity"), "original_language": d.get("original_language"),
+        "genres": [g["name"] for g in d.get("genres", [])],
+        "release_dates": [
+            {"country": c["iso_3166_1"], "type": x["type"], "date": x["release_date"][:10], "note": x.get("note") or None}
+            for c in d.get("release_dates", {}).get("results", []) for x in c["release_dates"]
+        ],
+    }
+
+
 def fetch_one(api: TMDB, row) -> dict:
     rec = {"imdb_id": row.tconst, "kind": row.kind, "imdb_title": row.primaryTitle,
            "imdb_year": int(row.startYear), "imdb_votes": int(row.numVotes), "imdb_rating": float(row.averageRating)}
@@ -97,17 +112,7 @@ def fetch_one(api: TMDB, row) -> dict:
     tmdb_id = hits[0]["id"]
     if row.kind == "movie":
         d = api.get(f"/movie/{tmdb_id}", append_to_response="release_dates") or {}
-        return rec | {
-            "status": "ok", "tmdb_id": tmdb_id, "title": d.get("title"),
-            "release_date": d.get("release_date"), "runtime": d.get("runtime"),
-            "budget": d.get("budget"), "revenue": d.get("revenue"),
-            "popularity": d.get("popularity"), "original_language": d.get("original_language"),
-            "genres": [g["name"] for g in d.get("genres", [])],
-            "release_dates": [
-                {"country": c["iso_3166_1"], "type": x["type"], "date": x["release_date"][:10], "note": x.get("note") or None}
-                for c in d.get("release_dates", {}).get("results", []) for x in c["release_dates"]
-            ],
-        }
+        return rec | movie_fields(d)
     d = api.get(f"/tv/{tmdb_id}") or {}
     return rec | {
         "status": "ok", "tmdb_id": tmdb_id, "title": d.get("name"),
