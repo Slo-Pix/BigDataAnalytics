@@ -5,6 +5,8 @@ torrents, e.g. `Inception`, `Inception_(film)`, `Inception_(2010_film)`. English
 pageviews (project `en` / `en.m`, 2026-09-01..07) are filtered against the candidates with a broadcast
 join, so the 1.15B-row table is scanned once without a shuffle. Per title the most specific page that
 has views wins: (year + type) > (type) > bare title, which avoids disambiguation pages like `Up`.
+`confidence`: high = typed page, medium = multi-word bare name, low = single-word bare name (often a
+different topic, e.g. the game "Krakatoa" -> the volcano); analyses should drop `low` by default.
 
 Usage: uv run python -m etl.curate_wiki
 """
@@ -66,6 +68,9 @@ def main():
         candidates.join(page_total, "page_title")
         .withColumn("pick", F.row_number().over(Window.partitionBy("entity_type", "entity_id").orderBy("rank")))
         .where(c("pick") == 1).drop("pick")
+        # bare single-word names ("Krakatoa", "Fall") often hit a different topic's page
+        .withColumn("confidence", F.when(c("rank") < 3, "high")
+                    .when(F.size(F.split(F.trim("name"), r"\s+")) > 1, "medium").otherwise("low"))
     )
     best.write.mode("overwrite").parquet(str(CURATED / "wiki_interest"))
     best = spark.read.parquet(str(CURATED / "wiki_interest"))
@@ -76,9 +81,9 @@ def main():
           f"in {(time.time() - t0) / 60:.1f} min")
     best.groupBy("entity_type", "category").agg(
         F.count("*").alias("matched"), F.percentile_approx("views_week", 0.5).alias("median_views_week"),
-        F.sum((c("rank") == 1).cast("int")).alias("year_specific"), F.sum((c("rank") == 3).cast("int")).alias("bare"),
+        *[F.sum((c("confidence") == k).cast("int")).alias(k) for k in ("high", "medium", "low")],
     ).orderBy("entity_type", "category").show()
-    best.orderBy(F.desc("views_week")).select("category", "name", "page_title", "views_week").show(12, truncate=40)
+    best.where("confidence != 'low'").orderBy(F.desc("views_week")).select("category", "name", "page_title", "confidence", "views_week").show(12, truncate=40)
     spark.stop()
 
 
