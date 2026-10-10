@@ -1,6 +1,6 @@
 # Build Phases — Distributed Analytics of Global Torrent Activity
 
-Derived from `BDA_Project_Plan.pdf` (1-week scope). Owner: A = Shubham (data eng), B = Ajay (analytics).
+Derived from `BDA_Project_Plan.pdf` (1-week scope). **Ajay is not contributing (2026-10-10): Shubham owns every phase**, so the A/B split below is historical.
 Status: `[ ]` todo · `[~]` in progress · `[x]` done
 
 ## Phase 0 — Foundation (Day 1, A)
@@ -11,7 +11,7 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 
 ## Phase 1 — Data acquisition (Day 1–2, A + B)  ← START FIRST
 - [x] IMDb TSVs (basics, ratings, akas, principals) → `dataset/raw/imdb/`
-- [ ] RARBG catalog dump (SQLite) → `dataset/raw/rarbg/`
+- [~] RARBG catalog dump (SQLite, 775 MB, archive.org/details/rarbg_db, md5-verified) → `dataset/raw/rarbg/` (downloading)
 - [x] Wikipedia hourly pageviews, 7 days (2026-09-01..07, 168 files, 9.9 GB) → `dataset/raw/wikipedia/pageviews_hourly/`
 - [x] Kaggle Steam games dataset → `dataset/raw/steam/` (games.csv 401 MB, 125,855 games; games.json 965 MB)
 - [x] TMDB release dates, top 8k movies + 2k TV (IMDb votes, 2005–2023) → `dataset/raw/tmdb/` (9,956 found, 19 not found)
@@ -20,7 +20,7 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 ## Phase 2 — Batch ETL to Parquet (Day 3, A)
 - [ ] RARBG → `staging/torrents` (dedup by infohash, category normalisation)
 - [ ] Title parsing with guessit (title, year, season/episode, quality)
-- [ ] IMDb, Wikipedia, Steam, TMDB → `staging/*` Parquet, partitioned
+- [~] IMDb, Wikipedia, Steam, TMDB → `staging/*` Parquet (Steam ✅ 125,854 games; Wikipedia running; IMDb + TMDB scripts ready)
 - [ ] Delete raw `.gz` once converted
 
 ## Phase 3 — Streaming / speed layer (Day 2–3, A)
