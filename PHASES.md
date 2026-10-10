@@ -32,8 +32,12 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 - [ ] Go live: start scraper container + `streaming/run_stream.sh start` once `dataset/raw/scrape_targets/infohashes.txt` exists
 - [ ] HDFS profile (`--profile hdfs`) — written, not yet tested (big image pull; optional per plan)
 
-## Phase 4 — Integration / curated tables (Day 4, A → handoff to B)
-- [ ] torrents ⨝ IMDb ⨝ TMDB ⨝ Wikipedia ⨝ Steam → `curated/*`
+## Phase 4 — Integration / curated tables
+- [x] `curated/torrents_enriched` 1,390,470 movie/TV/game torrents ⨝ IMDb ⨝ TMDB (+ leak-lag day columns) ⨝ Steam (79% of game torrents, 81.6% of PC; exact / no-edition / base-game-prefix)
+- [x] Postgres `torrents` titles loaded → Grafana shows names
+- [x] `curated/swarm_slots`, `swarm_torrent_day`, `swarm_category_slots` (live; re-run after 21:00: `uv run python -m etl.curate_swarm`)
+- [x] `curated/wiki_interest` + `wiki_daily`: 57,284 titles matched to en Wikipedia pages (confidence high/medium/low) in 1 min over 1.15B rows
+- [ ] `curated/decay_by_year` from the full catalog scan (scan ~66%, finishes ~12:45)
 
 ## Phase 5 — Analytics + MLlib (Day 2–5, B; on samples first)
 - [ ] Volume by category × year (activity index)
