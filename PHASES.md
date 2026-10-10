@@ -37,15 +37,16 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] Postgres `torrents` titles loaded → Grafana shows names
 - [x] `curated/swarm_slots`, `swarm_torrent_day`, `swarm_category_slots` (live; re-run after 21:00: `uv run python -m etl.curate_swarm`)
 - [x] `curated/wiki_interest` + `wiki_daily`: 57,284 titles matched to en Wikipedia pages (confidence high/medium/low) in 1 min over 1.15B rows
-- [ ] `curated/decay_by_year` from the full catalog scan (scan ~66%, finishes ~12:45)
+- [x] Full catalog scan: 1,385,068 / 1,390,470 torrents (99.6%), 124,476 alive → `staging/swarm_fullscan`; two-tier live scraping (16.5k panel + 110k wide)
 
-## Phase 5 — Analytics + MLlib (Day 2–5, B; on samples first)
-- [ ] Volume by category × year (activity index)
-- [ ] Popularity decay: seeders vs age (exp / power-law fit)
-- [ ] Leak lag: TMDB digital release vs first upload
-- [ ] Wikipedia interest vs swarm size
-- [ ] Games: price/rating vs activity (MLlib regression)
-- [ ] Genres pirated relative to popularity
+## Phase 5 — Analytics + MLlib (figures: report/figures, tables: analysis/results)
+- [x] A1 activity index: uploads by category/year, resolution mix, x265 share
+- [x] A2 leak lag (films 2018+; catalog incomplete earlier): median 9 d in 2020–21, ~70% on RARBG within a day of legal release; TV median 1 d
+- [x] A3 decay per title (MLlib Poisson GLM): movies power law k=0.73; TV and games grow with age (no decay)
+- [x] A4 Wikipedia interest vs seeders (MLlib Spearman): movie 0.47, TV 0.41, game 0.24
+- [x] A5 games (MLlib logistic AUC 0.83 + random forest): free 5% pirated, $5–40 ~53%, >$40 38%
+- [x] A6 genres (MLlib OLS residuals): Sci-Fi +59%, Horror +56%, Romance −18%
+- [~] A7 intra-day swarm dynamics (fixed panel) — final run after 21:00 via `analysis/run_final.sh`
 
 ## Phase 6 — Dashboards (Day 5, B)
 - [ ] Grafana dashboards (batch results + live swarm)
