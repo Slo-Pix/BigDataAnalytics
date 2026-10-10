@@ -86,6 +86,21 @@ services:
     depends_on: {kafka-init: {condition: service_completed_successfully}}
     restart: unless-stopped
 
+  # Tier 2: every other torrent the full catalog scan found alive, scraped back-to-back (~20 min/round)
+  # while `scraper` keeps the original alive panel at ~3 min/round. Same Kafka topic, own JSONL backup.
+  scraper-wide:
+    profiles: [scraper]
+    build: {context: .., dockerfile: infra/scraper.Dockerfile}
+    container_name: scraper-wide
+    user: "${UID:-1000}:${GID:-1000}"
+    command: >
+      python -m ingest.tracker_scraper --hashes /data/raw/scrape_targets/wide.txt
+      --kafka kafka:19092 --interval 60 --jsonl-dir /data/stream/jsonl_wide
+    environment: {BDA_DATA: /data}
+    volumes: [../dataset:/data]
+    depends_on: {kafka-init: {condition: service_completed_successfully}}
+    restart: unless-stopped
+
   namenode:
     profiles: [hdfs]
     image: apache/hadoop:3.4.1
