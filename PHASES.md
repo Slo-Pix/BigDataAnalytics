@@ -23,7 +23,7 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 - [~] IMDb, Wikipedia, Steam, TMDB → `staging/*` Parquet (Steam ✅ 125,854 games; Wikipedia running; IMDb + TMDB scripts ready)
 - [ ] Delete raw `.gz` once converted
 
-## Phase 3 — Streaming / speed layer (Day 2–3, A)
+## Phase 3 — Streaming / speed layer — DONE: live 10:36–21:00 IST, 25,422,936 rows, 0 lost (Kafka offsets = rows applied), no gap > 5 min
 - [x] Docker Compose: Kafka 3.9 (KRaft) + Postgres 16 + Grafana 13 — running, healthy
 - [x] Scraper publishes to topic `tracker.scrapes` (also containerised, `--profile scraper`, restarts on reboot)
 - [x] Spark Structured Streaming: Kafka → Parquet `stream/swarm` (by date) + Postgres serving tables, 1-min trigger
@@ -46,7 +46,7 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] A4 Wikipedia interest vs seeders (MLlib Spearman): movie 0.47, TV 0.41, game 0.24
 - [x] A5 games (MLlib logistic AUC 0.83 + random forest): free 5% pirated, $5–40 ~53%, >$40 38%
 - [x] A6 genres (MLlib OLS residuals): Sci-Fi +59%, Horror +56%, Romance −18%
-- [~] A7 intra-day swarm dynamics (fixed panel) — final run after 21:00 via `analysis/run_final.sh`
+- [x] A7 intra-day swarms (opentrackr, fixed panel 110k torrents, 12:40–20:50 IST): movie/TV within ±1.5%, games +11% into the European/US day; leechers per seeder TV 0.42, movie 0.35, game 0.24
 
 ## Phase 6 — Dashboards (Day 5, B)
 - [ ] Grafana dashboards (batch results + live swarm)
