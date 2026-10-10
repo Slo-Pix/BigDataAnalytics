@@ -1,7 +1,7 @@
 # Build Phases — Distributed Analytics of Global Torrent Activity
 
 Derived from `BDA_Project_Plan.pdf` (1-week scope). **Ajay is not contributing (2026-10-10): Shubham owns every phase**, so the A/B split below is historical.
-Status: `[ ]` todo · `[~]` in progress · `[x]` done
+Status: `[ ]` todo · `[~]` in progress · `[x]` done — all phases complete
 
 ## Phase 0 — Foundation (Day 1, A)
 - [x] Repo layout: `ingest/ etl/ streaming/ analysis/ dashboards/ report/ infra/ dataset/ logs/`
@@ -53,5 +53,10 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] Grafana "Batch Analytics" (A1–A7 + dataset KPIs + data-lake inventory, 25 panels) from Postgres schema `analytics`
       (`dashboards/load_results.py` → `dashboards/build_batch_dashboard.py`); all queries verified, rendered with headless Chrome
 
-## Phase 7 — Report & demo (Day 6–7, both)
-- [ ] Runtime / volume stats, report, slides, rehearsal. Feature freeze end of Day 5.
+## Phase 7 — Report & validation — DONE
+- [x] `analysis/validate.py`: 26 / 26 checks pass (source → Parquet reconciliation, Kafka = ledger = Parquet, tracker agreement, spot checks)
+- [x] Final report: `report/CS404_Torrent_Analytics_Report.pdf` (19 pages, HTML source `report/report.html`)
+- [ ] Slides (in progress)
+- [x] Repo cleanup: lint clean, dashboard builders in `dashboards/`, README rewritten, Kafka log on its volume for future runs
+
+**Status: project complete (10 Oct 2026).**

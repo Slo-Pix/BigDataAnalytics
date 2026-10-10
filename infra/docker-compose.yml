@@ -23,6 +23,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_NUM_PARTITIONS: 6
       KAFKA_LOG_RETENTION_HOURS: 168   # keep a week so the stream job can replay
+      KAFKA_LOG_DIRS: /var/lib/kafka/data   # store the log on the kafka-data volume
     volumes: [kafka-data:/var/lib/kafka/data]
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null"]

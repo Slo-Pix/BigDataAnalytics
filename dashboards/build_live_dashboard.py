@@ -1,4 +1,7 @@
-"""Generates dashboards/live_swarm.json (provisioned into Grafana). Re-run after editing."""
+"""Generates infra/grafana/dashboards/live_swarm.json — the "Live Torrent Swarms" Grafana dashboard (speed layer).
+
+Usage: uv run python -m dashboards.build_live_dashboard   (Grafana picks the file up within ~10 s)
+"""
 import json
 from pathlib import Path
 
@@ -59,6 +62,13 @@ panels = [
 dash = {"uid": "live-swarm", "title": "Live Torrent Swarms (speed layer)", "schemaVersion": 39,
         "time": {"from": "now-24h", "to": "now"}, "refresh": "1m", "tags": ["torrent-bda", "streaming"],
         "panels": panels}
-out = Path(__file__).parent / "dashboards" / "live_swarm.json"
-out.write_text(json.dumps(dash, indent=2))
-print("wrote", out)
+OUT = Path(__file__).resolve().parents[1] / "infra" / "grafana" / "dashboards" / "live_swarm.json"
+
+
+def main():
+    OUT.write_text(json.dumps(dash, indent=2))
+    print("wrote", OUT)
+
+
+if __name__ == "__main__":
+    main()

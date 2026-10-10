@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import PercentFormatter
 
-from analysis.style import CATEGORY_COLOR, INK_2, SEQ, SERIES, save, save_table, setup
+from analysis.style import CATEGORY_COLOR, INK_2, SERIES, save, save_table, setup
 from common.spark import CURATED, get_spark
 
 INDIAN = ("hi", "ta", "te", "ml", "kn", "bn", "mr", "pa")

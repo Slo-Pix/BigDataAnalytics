@@ -18,7 +18,7 @@ Usage: uv run python -m analysis.a7_swarm_day
 """
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-from pyspark.sql import Window, functions as F
+from pyspark.sql import functions as F
 
 from analysis.style import CATEGORY_COLOR, INK_2, save, save_table, setup
 from common.spark import CURATED, STREAM, get_spark

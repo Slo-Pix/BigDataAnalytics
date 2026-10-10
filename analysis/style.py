@@ -4,7 +4,6 @@ Colors are the validated reference palette (dataviz skill, references/palette.md
 the same color in every figure: movie = slot 1, tv = slot 2, game = slot 3 (the first three slots pass
 the all-pairs colorblind check, so they are safe even in scatter plots).
 """
-from pathlib import Path
 
 import matplotlib
 
