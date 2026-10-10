@@ -38,7 +38,27 @@
           "format": "table",
           "rawSql": "SELECT count(DISTINCT infohash) FROM swarm_latest"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      }
     },
     {
       "id": 2,
@@ -66,7 +86,27 @@
           "format": "table",
           "rawSql": "SELECT sum(s) FROM (SELECT max(seeders) s FROM swarm_latest GROUP BY infohash) t"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      }
     },
     {
       "id": 3,
@@ -94,7 +134,27 @@
           "format": "table",
           "rawSql": "SELECT sum(rows) FROM swarm_minute WHERE $__timeFilter(minute)"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      }
     },
     {
       "id": 4,
@@ -122,7 +182,27 @@
           "format": "table",
           "rawSql": "SELECT count(*) FROM stream_batches"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      }
     },
     {
       "id": 5,
@@ -241,12 +321,79 @@
           "rawQuery": true,
           "editorMode": "code",
           "format": "table",
-          "rawSql": "SELECT coalesce(t.category, 'unmatched') AS category, sum(s) AS seeders\n             FROM (SELECT infohash, max(seeders) s FROM swarm_latest GROUP BY 1) l\n             LEFT JOIN torrents t USING (infohash) GROUP BY 1"
+          "rawSql": "SELECT sum(s) FILTER (WHERE category = 'movie') AS movie, sum(s) FILTER (WHERE category = 'tv') AS tv,\n                    sum(s) FILTER (WHERE category = 'game') AS game, sum(s) FILTER (WHERE category IS NULL) AS unmatched\n             FROM (SELECT infohash, max(seeders) s FROM swarm_latest GROUP BY 1) l\n             LEFT JOIN torrents t USING (infohash)"
         }
       ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "movie"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2a78d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tv"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eb6834"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "game"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1baf7a"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "unmatched"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#9a9893"
+                }
+              }
+            ]
+          }
+        ]
+      },
       "options": {
         "reduceOptions": {
-          "values": true,
+          "values": false,
           "calcs": [
             "lastNotNull"
           ]
@@ -256,7 +403,8 @@
           "displayMode": "table",
           "placement": "right",
           "values": [
-            "value"
+            "value",
+            "percent"
           ]
         }
       }
