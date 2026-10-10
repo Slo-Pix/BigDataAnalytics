@@ -41,6 +41,17 @@ services:
           --topic tracker.scrapes --partitions 6 --replication-factor 1
     restart: "no"
 
+  kafka-ui:
+    image: kafbat/kafka-ui:v1.5.0
+    container_name: kafka-ui
+    ports: ["8080:8080"]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: torrent-bda
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+      DYNAMIC_CONFIG_ENABLED: "false"
+    depends_on: {kafka: {condition: service_healthy}}
+    restart: unless-stopped
+
   postgres:
     image: postgres:16
     container_name: postgres

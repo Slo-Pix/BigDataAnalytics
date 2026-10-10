@@ -45,7 +45,7 @@ SERVING PostgreSQL ──► Grafana: "Live Torrent Swarms" + "Batch Analytics" 
 ```
 
 Tools: Apache Spark 4.0 (PySpark, Spark SQL, Structured Streaming, MLlib), Apache Kafka 3.9 (KRaft), Apache Parquet,
-PostgreSQL 16, Grafana 13, Docker Compose, guessit, uv. One machine: 12 cores, 15 GB RAM, Spark `local[*]`.
+PostgreSQL 16, Grafana 13, Kafka UI, FastAPI, Docker Compose, guessit, uv. One machine: 12 cores, 15 GB RAM, Spark `local[*]`.
 
 ## Running it
 
@@ -73,7 +73,12 @@ analysis/run_final.sh                                 # swarm summaries, A1–A7
 uv run python -m analysis.validate
 ```
 
-## Live demo (for the presentation)
+## Project portal and live demo (for the presentation)
+
+```bash
+uv run python -m portal.server   # http://localhost:8000 — overview, live stream, Kafka messages, dataset browser,
+                                 # Spark SQL in the browser, findings, links to Grafana / Kafka UI (:8080) / Spark UI
+```
 
 ```bash
 demo/live_demo.sh start      # demo scraper -> Kafka -> Spark Structured Streaming (10 s batches) -> PostgreSQL
@@ -93,6 +98,7 @@ streaming/   Structured Streaming job and its start / stop / scheduled-stop / re
 analysis/    A1–A7 (Spark SQL + MLlib), validation, figure style; results/*.csv
 dashboards/  results → PostgreSQL loader; Grafana live, demo and batch dashboard generators
 demo/        live classroom demo (start/stop), interactive Spark SQL console, prepared queries
+portal/      project portal: FastAPI backend (live data from Postgres, Kafka, Parquet, Docker, Spark) + web UI
 infra/       Docker Compose, PostgreSQL schema, Grafana provisioning + dashboard JSON, scraper image
 report/      final report (PDF + HTML source) and figures
 docs/        dataset schema

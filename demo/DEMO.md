@@ -7,11 +7,13 @@ Parquet folder (`dataset/stream/demo`) and PostgreSQL schema (`demo`), so the re
 ## Before the professor arrives (2 minutes)
 ```bash
 cd ~/Downloads/bda_pro
-docker compose -f infra/docker-compose.yml up -d     # Kafka, PostgreSQL, Grafana
-demo/live_demo.sh start                              # demo scraper + Spark Structured Streaming
+docker compose -f infra/docker-compose.yml up -d     # Kafka, Kafka UI, PostgreSQL, Grafana
+uv run python -m portal.server                       # the project portal: http://localhost:8000
 ```
-Open in the browser: http://localhost:3000/d/live-demo (Live Demo), http://localhost:3000/d/batch-analytics,
-and the report PDF. Open a terminal for the SQL console.
+Open **http://localhost:8000** and press **Start demo** in the sidebar (or run `demo/live_demo.sh start`).
+The portal is the single entry point: Overview → Live stream → Kafka (raw messages) → Dataset (row previews)
+→ Spark SQL (run queries in the browser) → Findings → Tools (links to Grafana, Kafka UI :8080, Spark UI :4040/:4041).
+The terminal console below and the Grafana dashboards show the same things in the classic tools.
 
 ## 1. The streaming pipeline, live (3 min) — http://localhost:3000/d/live-demo
 - "Micro-batches applied" and the **Latest micro-batches** table grow every 10 s: each row is one Spark
