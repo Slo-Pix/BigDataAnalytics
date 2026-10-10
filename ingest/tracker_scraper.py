@@ -102,7 +102,8 @@ class UDPTracker:
 class Sink:
     """Writes rows to hourly JSONL files and optionally Kafka."""
 
-    def __init__(self, kafka: str | None, topic: str = "tracker.scrapes"):
+    def __init__(self, kafka: str | None, topic: str = "tracker.scrapes", jsonl_dir: Path = STREAM / "jsonl"):
+        self.jsonl_dir = jsonl_dir
         self.topic = topic
         self.fh, self.fh_key = None, None
         self.lock = threading.Lock()
@@ -119,7 +120,7 @@ class Sink:
         if key != self.fh_key:
             if self.fh:
                 self.fh.close()
-            path = STREAM / "jsonl" / f"{key}.jsonl"
+            path = self.jsonl_dir / f"{key}.jsonl"
             path.parent.mkdir(parents=True, exist_ok=True)
             self.fh, self.fh_key = open(path, "a", buffering=1 << 16), key
         return self.fh
@@ -190,11 +191,12 @@ def main():
     ap.add_argument("--interval", type=int, default=3600, help="seconds between round starts")
     ap.add_argument("--kafka", default=None, help="bootstrap servers, e.g. localhost:9092")
     ap.add_argument("--topic", default="tracker.scrapes")
+    ap.add_argument("--jsonl-dir", type=Path, default=STREAM / "jsonl", help="where the raw JSONL backup goes")
     ap.add_argument("--once", action="store_true", help="run a single round and exit")
     args = ap.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    sink = Sink(args.kafka, args.topic)
+    sink = Sink(args.kafka, args.topic, args.jsonl_dir)
 
     while True:
         start = time.monotonic()
