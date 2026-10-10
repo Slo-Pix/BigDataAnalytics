@@ -32,6 +32,7 @@ BATCH_SIZE = {"exodus.desync.com:6969": 50}
 CONN_ID_TTL = 50  # seconds; BEP 15 says 60
 REQUEST_GAP = 0.1  # seconds between scrape requests to one tracker
 MAX_CONSECUTIVE_ERRORS = 25  # a tracker is treated as down for the round only after this many in a row
+DOWN_BACKOFF = 600  # seconds to wait before retrying a tracker that returned nothing
 
 DEFAULT_TRACKERS = [
     "tracker.opentrackr.org:1337",
@@ -188,7 +189,7 @@ def main():
     ap.add_argument("--hashes", type=Path, required=True, help="text file, one hex infohash per line")
     ap.add_argument("--limit", type=int, default=None, help="only scrape the first N hashes")
     ap.add_argument("--trackers", nargs="*", default=DEFAULT_TRACKERS)
-    ap.add_argument("--interval", type=int, default=3600, help="seconds between round starts")
+    ap.add_argument("--interval", type=int, default=3600, help="seconds between round starts, per tracker")
     ap.add_argument("--kafka", default=None, help="bootstrap servers, e.g. localhost:9092")
     ap.add_argument("--topic", default="tracker.scrapes")
     ap.add_argument("--jsonl-dir", type=Path, default=STREAM / "jsonl", help="where the raw JSONL backup goes")
@@ -198,17 +199,23 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     sink = Sink(args.kafka, args.topic, args.jsonl_dir)
 
-    while True:
-        start = time.monotonic()
-        hashes = load_hashes(args.hashes, args.limit)  # re-read each round so the list can grow
-        # trackers in parallel; each tracker's batches sequentially (be polite)
-        with ThreadPoolExecutor(len(args.trackers)) as pool:
-            counts = dict(zip(args.trackers, pool.map(lambda t: scrape_tracker(t, hashes, sink), args.trackers)))
-        sink.flush()
-        log.info("round done in %.0fs, %d hashes: %s", time.monotonic() - start, len(hashes), counts)
-        if args.once:
-            break
-        time.sleep(max(0, args.interval - (time.monotonic() - start)))
+    def tracker_loop(tracker: str) -> int:
+        """Each tracker runs its own rounds, so a slow tracker never holds back the fast ones."""
+        while True:
+            start = time.monotonic()
+            hashes = load_hashes(args.hashes, args.limit)  # re-read each round so the list can change
+            n = scrape_tracker(tracker, hashes, sink)  # batches sequentially per tracker (be polite)
+            sink.flush()
+            log.info("round done in %.0fs on %s: %d of %d hashes", time.monotonic() - start, tracker, n, len(hashes))
+            if args.once:
+                return n
+            # a tracker that returned nothing is probably down: back off for 10 minutes
+            wait = DOWN_BACKOFF if n == 0 else args.interval - (time.monotonic() - start)
+            time.sleep(max(0, wait))
+
+    with ThreadPoolExecutor(len(args.trackers)) as pool:
+        counts = dict(zip(args.trackers, pool.map(tracker_loop, args.trackers)))
+    log.info("all trackers done: %s", counts)
 
 
 if __name__ == "__main__":
