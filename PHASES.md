@@ -56,7 +56,7 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done — all phases complete
 ## Phase 7 — Report & validation — DONE
 - [x] `analysis/validate.py`: 26 / 26 checks pass (source → Parquet reconciliation, Kafka = ledger = Parquet, tracker agreement, spot checks)
 - [x] Final report: `report/CS404_Torrent_Analytics_Report.pdf` (19 pages, HTML source `report/report.html`)
-- [ ] Slides (in progress)
+- [x] Slides: 16-slide deck (claude.ai artifact; sources in `report/slides/`)
 - [x] Repo cleanup: lint clean, dashboard builders in `dashboards/`, README rewritten, Kafka log on its volume for future runs
 
 **Status: project complete (10 Oct 2026).**

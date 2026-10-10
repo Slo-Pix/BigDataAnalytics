@@ -1,0 +1,16 @@
+<section id="speed" data-transition="fade" style="background:#14213D;color:#F7F6F2;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;color:#8DB8F0;letter-spacing:2px;text-transform:uppercase">Speed layer, live on 10 Oct 2026</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1;color:#F7F6F2">10.4 hours of streaming, not one row lost</h2>
+</div>
+<div style="display:flex;gap:48px;align-items:start">
+<div style="width:560px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:2px"><p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:72px;font-weight:700;color:#8DB8F0">25,422,936</p><p style="font-size:26px;color:#C9D3E6">rows: Kafka = Postgres ledger = Parquet</p></div>
+<div style="display:flex;flex-direction:column;gap:2px"><p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;color:#F7F6F2">603 batches</p><p style="font-size:26px;color:#C9D3E6">1-minute micro-batches, exactly-once into Postgres</p></div>
+<div style="display:flex;flex-direction:column;gap:2px"><p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;color:#F7F6F2">126k torrents</p><p style="font-size:26px;color:#C9D3E6">alive ones, every 2–15 min, 5 trackers</p></div>
+</div>
+<img src="/_blob/2904affafe89a398c8cfb775d4089c45" alt="Grafana Live Torrent Swarms dashboard at the end of collection: 248,569 torrents tracked, 611,543 seeders, 25,422,936 rows, 603 micro-batches, throughput chart and largest swarms table" style="width:1056px;height:660px;object-fit:contain;border-radius:12px">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#C9D3E6">5</p>
+<aside>How it ran: tier 1 scraped 16,555 known-alive torrents about every 2 minutes; tier 2 scraped 110,036 more alive torrents found by a full catalog scan, every 11 to 20 minutes. Each micro-batch id is written to a ledger table in the same transaction as its data, so a replay after a crash is skipped — exactly-once; we tested it by deleting the checkpoint and replaying. A scheduled stop at 21:00 stopped the scrapers, let Spark drain Kafka and stopped the stream. It survived a reboot on battery loss, two tracker outages and a slow phone hotspot.</aside>
+</section>

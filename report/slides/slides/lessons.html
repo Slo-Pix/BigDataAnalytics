@@ -1,0 +1,15 @@
+<section id="lessons" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;color:#2A78D6;letter-spacing:2px;text-transform:uppercase">What we learned</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">Most of the work was finding where the data lies</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+<div style="background:#FFFFFF;border:1px solid #E1E4EA;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:32px;font-weight:600">Time zones</h3><p style="font-size:26px;color:#4A5568;line-height:1.35">PySpark shifted stream times 5 h 30 min into local time — fixed by forcing UTC</p></div>
+<div style="background:#FFFFFF;border:1px solid #E1E4EA;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:32px;font-weight:600">Broken headers</h3><p style="font-size:26px;color:#4A5568;line-height:1.35">Steam CSV had 39 header names for 40 columns — every column after Price was shifted</p></div>
+<div style="background:#FFFFFF;border:1px solid #E1E4EA;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:32px;font-weight:600">Survivorship</h3><p style="font-size:26px;color:#4A5568;line-height:1.35">Old torrents looked healthier because unpopular ones were deleted — analyse per title</p></div>
+<div style="background:#FFFFFF;border:1px solid #E1E4EA;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:32px;font-weight:600">Selection effects</h3><p style="font-size:26px;color:#4A5568;line-height:1.35">Torrents picked for being alive at noon faded by 13:30 — use a fixed panel</p></div>
+</div>
+<p style="font-size:28px;color:#4A5568">Limits: one site (closed 2023), one day of live data, trackers see part of each swarm, associations not causes.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#6B7280">15</p>
+<aside>Each of these would have produced a confident, wrong result if we had not checked. Others in the report: Spark 4's strict ANSI mode crashing on one bad value, US digital release dates missing or years late, ambiguous Wikipedia page names, and a scraper that gave up on trackers too early.</aside>
+</section>
