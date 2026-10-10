@@ -102,6 +102,19 @@ services:
     depends_on: {kafka-init: {condition: service_completed_successfully}}
     restart: unless-stopped
 
+  # Classroom demo: the ~2,000 busiest torrents every ~15 s into a separate topic (demo/live_demo.sh)
+  scraper-demo:
+    profiles: [demo]
+    build: {context: .., dockerfile: infra/scraper.Dockerfile}
+    container_name: scraper-demo
+    user: "${UID:-1000}:${GID:-1000}"
+    command: >
+      python -m ingest.tracker_scraper --hashes /data/raw/scrape_targets/demo.txt
+      --kafka kafka:19092 --topic tracker.scrapes.demo --interval 15 --jsonl-dir /data/stream/jsonl_demo
+    environment: {BDA_DATA: /data}
+    volumes: [../dataset:/data]
+    restart: "no"
+
   namenode:
     profiles: [hdfs]
     image: apache/hadoop:3.4.1

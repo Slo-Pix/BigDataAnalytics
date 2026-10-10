@@ -228,7 +228,7 @@
           "rawQuery": true,
           "editorMode": "code",
           "format": "time_series",
-          "rawSql": "SELECT minute AS time, sum(rows) AS rows FROM swarm_minute\n             WHERE $__timeFilter(minute) GROUP BY 1 ORDER BY 1"
+          "rawSql": "SELECT minute AS time, sum(rows) AS rows FROM swarm_minute\n                 WHERE $__timeFilter(minute) GROUP BY 1 ORDER BY 1"
         }
       ],
       "fieldConfig": {
@@ -265,7 +265,7 @@
           "rawQuery": true,
           "editorMode": "code",
           "format": "time_series",
-          "rawSql": "SELECT date_trunc('hour', minute) AS time, tracker,\n                    sum(total_seeders)::float / nullif(sum(rows), 0) AS avg_seeders\n             FROM swarm_minute WHERE $__timeFilter(minute) GROUP BY 1, 2 ORDER BY 1"
+          "rawSql": "SELECT date_trunc('hour', minute) AS time, tracker,\n                        sum(total_seeders)::float / nullif(sum(rows), 0) AS avg_seeders\n                 FROM swarm_minute WHERE $__timeFilter(minute) GROUP BY 1, 2 ORDER BY 1"
         }
       ]
     },
@@ -293,7 +293,7 @@
           "rawQuery": true,
           "editorMode": "code",
           "format": "table",
-          "rawSql": "SELECT coalesce(t.title, l.infohash) AS torrent, t.category,\n                    max(l.seeders) AS seeders, max(l.leechers) AS leechers, max(l.completed) AS completed,\n                    max(l.scraped_at) AS last_seen\n             FROM swarm_latest l LEFT JOIN torrents t USING (infohash)\n             GROUP BY 1, 2 ORDER BY seeders DESC LIMIT 25"
+          "rawSql": "SELECT coalesce(t.title, l.infohash) AS torrent, t.category,\n                        max(l.seeders) AS seeders, max(l.leechers) AS leechers, max(l.completed) AS completed,\n                        max(l.scraped_at) AS last_seen\n                 FROM swarm_latest l LEFT JOIN torrents t USING (infohash)\n                 GROUP BY 1, 2 ORDER BY seeders DESC LIMIT 25"
         }
       ]
     },
@@ -321,7 +321,7 @@
           "rawQuery": true,
           "editorMode": "code",
           "format": "table",
-          "rawSql": "SELECT sum(s) FILTER (WHERE category = 'movie') AS movie, sum(s) FILTER (WHERE category = 'tv') AS tv,\n                    sum(s) FILTER (WHERE category = 'game') AS game, sum(s) FILTER (WHERE category IS NULL) AS unmatched\n             FROM (SELECT infohash, max(seeders) s FROM swarm_latest GROUP BY 1) l\n             LEFT JOIN torrents t USING (infohash)"
+          "rawSql": "SELECT sum(s) FILTER (WHERE category = 'movie') AS movie, sum(s) FILTER (WHERE category = 'tv') AS tv,\n                        sum(s) FILTER (WHERE category = 'game') AS game, sum(s) FILTER (WHERE category IS NULL) AS unmatched\n                 FROM (SELECT infohash, max(seeders) s FROM swarm_latest GROUP BY 1) l\n                 LEFT JOIN torrents t USING (infohash)"
         }
       ],
       "fieldConfig": {

@@ -73,6 +73,16 @@ analysis/run_final.sh                                 # swarm summaries, A1–A7
 uv run python -m analysis.validate
 ```
 
+## Live demo (for the presentation)
+
+```bash
+demo/live_demo.sh start      # demo scraper -> Kafka -> Spark Structured Streaming (10 s batches) -> PostgreSQL
+                             # Grafana "Live Demo" (refresh 5 s): http://localhost:3000/d/live-demo
+uv run python -m demo.sql    # interactive Spark SQL over every table; \run 1 counts 1.15 B rows in ~10 s
+demo/live_demo.sh stop
+```
+Isolated from the 10 Oct dataset (own topic, Parquet folder and Postgres schema). Step-by-step: [demo/DEMO.md](demo/DEMO.md).
+
 ## Repository
 
 ```
@@ -81,7 +91,8 @@ ingest/      downloaders, TMDB fetchers, BEP 15 tracker scraper, scrape-target b
 etl/         Spark jobs raw → staging → curated
 streaming/   Structured Streaming job and its start / stop / scheduled-stop / reboot-recovery scripts
 analysis/    A1–A7 (Spark SQL + MLlib), validation, figure style; results/*.csv
-dashboards/  results → PostgreSQL loader; Grafana live and batch dashboard generators
+dashboards/  results → PostgreSQL loader; Grafana live, demo and batch dashboard generators
+demo/        live classroom demo (start/stop), interactive Spark SQL console, prepared queries
 infra/       Docker Compose, PostgreSQL schema, Grafana provisioning + dashboard JSON, scraper image
 report/      final report (PDF + HTML source) and figures
 docs/        dataset schema
