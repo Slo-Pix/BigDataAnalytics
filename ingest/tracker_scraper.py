@@ -28,6 +28,8 @@ PROTOCOL_ID = 0x41727101980
 ACTION_CONNECT, ACTION_SCRAPE, ACTION_ERROR = 0, 2, 3
 MAX_HASHES_PER_SCRAPE = 74  # keeps the packet under typical MTU
 CONN_ID_TTL = 50  # seconds; BEP 15 says 60
+REQUEST_GAP = 0.1  # seconds between scrape requests to one tracker
+MAX_CONSECUTIVE_ERRORS = 25  # a tracker is treated as down for the round only after this many in a row
 
 DEFAULT_TRACKERS = [
     "tracker.opentrackr.org:1337",
@@ -155,19 +157,24 @@ def scrape_tracker(hostport: str, batches: list[list[str]], sink: Sink) -> int:
     except OSError as e:
         log.warning("%s: resolve failed (%s)", hostport, e)
         return 0
-    n, errors = 0, 0
+    n, consecutive, failed = 0, 0, 0
     for batch in batches:
+        time.sleep(REQUEST_GAP)  # be polite: small trackers rate-limit bursts
         try:
             rows = tr.scrape(batch)
         except (TrackerError, OSError) as e:
-            errors += 1
+            consecutive += 1
+            failed += 1
             tr.conn_id = None
-            if errors >= 10:
-                log.warning("%s: giving up this round after %d errors (last: %s)", hostport, errors, e)
+            if consecutive >= MAX_CONSECUTIVE_ERRORS:
+                log.warning("%s: giving up this round after %d consecutive errors (last: %s)", hostport, consecutive, e)
                 break
             continue
+        consecutive = 0
         sink.write(hostport, rows)
         n += len(rows)
+    if failed:
+        log.info("%s: %d of %d batches failed this round", hostport, failed, len(batches))
     return n
 
 
