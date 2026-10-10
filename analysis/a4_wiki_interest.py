@@ -9,6 +9,8 @@ Spearman rank correlations per category via pyspark.ml.stat.Correlation. Correla
 
 Usage: uv run python -m analysis.a4_wiki_interest
 """
+import math
+
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
@@ -65,10 +67,13 @@ def main():
         ax.set_title(f"{cat}  (n={len(d):,})")
         ax.annotate(f"Spearman ρ = {r.rho_views_seeders:.2f}", (0.03, 0.95), xycoords="axes fraction", va="top", fontsize=9, color=INK_2)
         ax.set_xlabel("Wikipedia views, 1–7 Sep 2026")
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{10 ** v:,.0f}"))
         ax.grid(False)
     axes[0].set_ylabel("current seeders (all versions)")
-    axes[0].yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{10 ** v - 1:,.0f}"))
+    yt = [0, 1, 10, 100, 1000]
+    axes[0].set_yticks([math.log10(v + 1) for v in yt], [f"{v:,}" for v in yt])
+    xt = [1, 100, 10_000]
+    for ax in axes:
+        ax.set_xticks([math.log10(v) for v in xt], ["1", "100", "10k"])
     save(fig, "a4_wiki_vs_seeders", "English Wikipedia (desktop + mobile) vs seeders on opentrackr, Oct 2026. Darker = more titles. Log scales.")
     spark.stop()
 
