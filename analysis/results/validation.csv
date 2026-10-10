@@ -1,0 +1,27 @@
+check,expected,observed,status,note
+RARBG: SQLite rows = staging rows,2843691,2843691,PASS,
+RARBG: staging infohashes unique,2843691,2843691,PASS,
+Wikipedia: raw lines vs staging rows,1153725864,1153632847,PASS,"dropped 93,017 malformed lines (0.0081%)"
+Wikipedia: 168 hourly files present,168,168,PASS,
+IMDb title.basics: raw rows = staging rows,12849219,12849219,PASS,
+IMDb title.akas: raw rows = staging rows,59678827,59678827,PASS,
+IMDb title.principals: raw rows = staging rows,102198330,102198330,PASS,
+IMDb title.episode: raw rows = staging rows,9935383,9935383,PASS,
+Steam: raw rows vs staging rows (dedup by app_id),125855,125854,PASS,1 duplicate/invalid app_id dropped
+TMDB: fetched 'ok' records = staging titles,13462,13462,PASS,
+Stream: Kafka messages = Postgres ledger rows,25422936,25422936,PASS,
+Stream: Kafka messages = Parquet rows,25422936,25422936,PASS,
+Stream: no micro-batch applied twice,0,0,PASS,603 micro-batches
+Stream: JSONL backup lines = Parquet rows,25422936,25421825,PASS,JSONL write buffer not flushed when the scraper containers were force-stopped at 21:00; Kafka/Parquet complete
+Stream: all observations inside 10 Oct 10:36–21:01 IST,05:06–15:31 UTC,05:05–15:30 UTC,PASS,
+Stream: no negative counts,0,0,PASS,
+"Trackers agree: Spearman ρ(opentrackr, stealth.si) seeders",> 0.7,0.736,PASS,"3,296,859 torrent-slot pairs; independent trackers measuring the same swarms"
+"Full scan agrees with live scrapes (same tracker, ~same time)",> 0.8,0.977,PASS,"248,019 torrents"
+Spot check: Inception first theatrical date,2010-07-15,2010-07-15,PASS,TMDB vs public record (±3 days for premiere vs release)
+Spot check: Avengers: Endgame first theatrical date,2019-04-24,2019-04-24,PASS,TMDB vs public record (±3 days for premiere vs release)
+Spot check: The Dark Knight first theatrical date,2008-07-16,2008-07-16,PASS,TMDB vs public record (±3 days for premiere vs release)
+Spot check: Interstellar first theatrical date,2014-11-05,2014-11-04,PASS,TMDB vs public record (±3 days for premiere vs release)
+Spot check guessit: Inception.2010.2160p.BluRay.HEVC.DTS-HD.MA.5.1-COASTER,Inception (2010),Inception | year 2010.0 | Snan Enan | 2160p,PASS,
+Spot check guessit: Inception.2010.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.5.1-FGT,Inception (2010),Inception | year 2010.0 | Snan Enan | 2160p,PASS,
+Spot check guessit: The.Mandalorian.S01E01.INTERNAL.1080p.WEB.H264-DEFLATE[rartv,The Mandalorian + season/episode,The Mandalorian | year nan | S1.0 E1.0 | 1080p,PASS,
+Spot check guessit: The.Mandalorian.S01E01.2160p.WEBRip.x265.10bit.HDR.DDP5.1.At,The Mandalorian + season/episode,The Mandalorian | year nan | S1.0 E1.0 | 2160p,PASS,

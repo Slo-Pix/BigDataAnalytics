@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Distributed Analytics of Global Torrent Activity — CS404 Final Report</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 20mm 18mm;
+          @bottom-center { content: counter(page); font: 9pt Inter, sans-serif; color: #52514e; } }
+  @page :first { @bottom-center { content: none; } }
+  :root { --ink: #0b0b0b; --ink2: #52514e; --rule: #e4e3df; --accent: #1c5cab; --tint: #f4f7fc; }
+  html { font-family: Inter, "DejaVu Sans", sans-serif; font-size: 10pt; line-height: 1.5; color: var(--ink); }
+  body { margin: 0; }
+  h1 { font-size: 17pt; color: var(--accent); margin: 0 0 6pt; break-after: avoid; }
+  h2 { font-size: 13pt; color: var(--accent); margin: 18pt 0 6pt; break-after: avoid; border-bottom: 1px solid var(--rule); padding-bottom: 3pt; }
+  h3 { font-size: 10.5pt; margin: 12pt 0 4pt; break-after: avoid; }
+  p { margin: 0 0 7pt; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 0 0 7pt; padding-left: 16pt; } li { margin-bottom: 2pt; }
+  table { border-collapse: collapse; width: 100%; margin: 4pt 0 10pt; font-size: 8.8pt; break-inside: avoid; }
+  th { text-align: left; background: var(--tint); color: var(--accent); font-weight: 600; }
+  th, td { padding: 3.5pt 6pt; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  figure { margin: 6pt 0 12pt; break-inside: avoid; }
+  figure img { width: 100%; display: block; }
+  figure.half img { width: 78%; margin: 0 auto; }
+  figcaption { font-size: 8.6pt; color: var(--ink2); margin-top: 3pt; }
+  figcaption b { color: var(--ink); }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; background: #f2f1ee; padding: 0 2pt; border-radius: 2pt; }
+  pre { font-family: "DejaVu Sans Mono", monospace; font-size: 8pt; background: #f6f5f2; padding: 6pt 8pt; border-radius: 3pt; margin: 4pt 0 10pt; white-space: pre-wrap; break-inside: avoid; }
+  .key { background: var(--tint); border-left: 3px solid var(--accent); padding: 6pt 9pt; margin: 6pt 0 10pt; break-inside: avoid; }
+  .key p:last-child, .key ul:last-child { margin-bottom: 0; }
+  .muted { color: var(--ink2); }
+  .pb { break-before: page; }
+  /* title page */
+  .cover { height: 245mm; display: flex; flex-direction: column; justify-content: center; }
+  .cover .course { color: var(--ink2); font-size: 11pt; letter-spacing: .04em; text-transform: uppercase; }
+  .cover h1 { font-size: 26pt; line-height: 1.2; margin: 8pt 0 10pt; }
+  .cover .sub { font-size: 12pt; color: var(--ink2); margin-bottom: 26pt; }
+  .cover table { width: 70%; font-size: 10pt; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8pt; margin: 22pt 0 0; }
+  .stats div { background: var(--tint); padding: 8pt; border-radius: 3pt; }
+  .stats b { display: block; font-size: 15pt; color: var(--accent); }
+  .stats span { font-size: 8.5pt; color: var(--ink2); }
+  .toc { columns: 2; font-size: 9.5pt; } .toc div { break-inside: avoid; }
+  svg text { font-family: Inter, sans-serif; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="course">CS404 · Big Data Analytics · Final Project Report</div>
+  <h1>Distributed Analytics of Global Torrent Activity</h1>
+  <div class="sub">A batch + streaming (Lambda) pipeline over 1.38 billion rows of public BitTorrent, film, TV, game and Wikipedia metadata</div>
+  <table>
+    <tr><th>Name</th><th>Roll No.</th></tr>
+    <tr><td>Shubham Sharma</td><td>2023BCS-062</td></tr>
+    <tr><td>Ajay Singh</td><td>2023BCS-004</td></tr>
+  </table>
+  <p class="muted" style="margin-top:14pt">October 2026</p>
+  <div class="stats">
+    <div><b>1.38 B</b><span>rows in the data lake (Parquet)</span></div>
+    <div><b>25.4 M</b><span>live tracker observations streamed through Kafka, 0 lost</span></div>
+    <div><b>2.84 M</b><span>torrents in the RARBG catalog, 2007–2023</span></div>
+    <div><b>7</b><span>analyses, 4 Spark MLlib models, 2 Grafana dashboards</span></div>
+  </div>
+</section>
+
+<section class="pb">
+<h1>Abstract</h1>
+<p>Torrent networks generate large, publicly observable activity data that is rarely measured systematically across media types. We built a big-data platform that studies piracy activity for movies, TV and games using only public metadata: no copyrighted content was downloaded and no peer IP addresses were stored. The batch layer ingests the RARBG catalog dump (2.84 million torrents, 2007–2023), IMDb (184.7 million rows), one week of hourly Wikipedia pageviews (1.15 billion rows), the Kaggle Steam games dataset and TMDB release dates, cleans them with Apache Spark into partitioned Parquet, and joins them into analysis tables. The speed layer scrapes live seeder/leecher counts from five public BitTorrent trackers using the UDP scrape protocol (BEP 15), streams them through Apache Kafka into Spark Structured Streaming, and serves them to Grafana through PostgreSQL; on 10 October 2026 it collected 25.4 million observations in 10.4 hours with no data loss. A one-pass scan of all 1.39 million catalog torrents added a complete cross-section of current swarm sizes.</p>
+<p>Key findings: (1) piracy now follows legal release almost immediately — for films released 2020–2023, 66–70 % were on RARBG by the day after their legal digital release, almost always as a WEB copy, and 18–25 % appeared before it; new TV episodes appeared a median of 1 day after the premiere; (2) a film's swarm shrinks with age as a power law (seeders ∝ age<sup>−0.73</sup>), while TV series and games do not decay; (3) for Steam games, free-to-play titles are almost never pirated (5 %) while paid games are pirated at about 50 %, dropping to 38 % above $40, and an MLlib logistic model predicts piracy with a test AUC of 0.83; (4) Sci-Fi and Horror films get ~56–59 % more torrent versions than equally popular films, Romance 18 % fewer; (5) Wikipedia interest correlates moderately with current seeders (Spearman ρ = 0.47 for movies). All results are associations, not causal effects.</p>
+
+<h2 style="margin-top:14pt">Contents</h2>
+<div class="toc">
+  <div>1 Introduction and research questions</div><div>2 Scope, ethics and changes from the proposal</div>
+  <div>3 Data sources</div><div>4 Architecture</div><div>5 Pipeline implementation</div>
+  <div>6 Results</div><div>7 Validation: how we know it is right</div><div>8 Data-quality problems found and fixed</div>
+  <div>9 Limitations</div><div>10 Conclusion and future work</div><div>A Data model · B Reproducing · C Repository</div>
+</div>
+
+<h2>1 Introduction and research questions</h2>
+<p>BitTorrent trackers publish, for every torrent, how many peers currently hold the full file (seeders), how many are downloading (leechers) and how many downloads have completed. Combined with a catalog of what each torrent is, this public data can measure piracy across media types at scale. The project set out to build a scalable pipeline for this data and to answer six questions:</p>
+<ol>
+  <li><b>RQ1 Activity:</b> how has torrent upload volume and release quality evolved per category (A1)?</li>
+  <li><b>RQ2 Leak lag:</b> how soon after cinema and legal home release do films appear, and from which source (A2)?</li>
+  <li><b>RQ3 Decay:</b> how does a title's swarm shrink as it ages (A3)?</li>
+  <li><b>RQ4 Interest:</b> does public interest (Wikipedia pageviews) track piracy (A4)?</li>
+  <li><b>RQ5 Games:</b> how do price, popularity and game type relate to piracy (A5)?</li>
+  <li><b>RQ6 Genres:</b> which film genres are pirated more than their popularity predicts (A6)?</li>
+</ol>
+<p>A seventh analysis (A7) uses the streaming data to describe how swarms change over a day.</p>
+
+<h2>2 Scope, ethics and changes from the proposal</h2>
+<p>Only metadata was processed: catalog titles and infohashes, aggregate counts returned by tracker <i>scrape</i> requests, and public film/game/encyclopaedia datasets. The scraper never downloads content and never requests peer lists, so no IP addresses are collected. The project was executed in about one week on a single laptop (12 cores, 15 GB RAM), which led to the scope changes below.</p>
+<table>
+  <tr><th>Proposal</th><th>Delivered</th><th>Reason</th></tr>
+  <tr><td>Self-hosted DHT crawler</td><td>Dropped; RARBG dump + full tracker scan instead</td><td>The dump already gives 2.84 M identified torrents; a DHT crawler needs weeks</td></tr>
+  <tr><td>Hourly tracker scrapes over months</td><td>Back-to-back scrapes for one day (10 Oct 2026, 10:36–21:00 IST) + one full-catalog scan</td><td>Time available; machine could only run unattended for one day</td></tr>
+  <tr><td>Music category, Spotify charts</td><td>Dropped</td><td>Little music on RARBG (108 k torrents, no IDs); Spotify API restricted</td></tr>
+  <tr><td>Apache Hive warehouse</td><td>Spark SQL over Parquet</td><td>Same SQL capability without a metastore</td></tr>
+  <tr><td>Apache Airflow</td><td>Shell runners (<code>run_phase2.sh</code>, <code>run_final.sh</code>) + cron</td><td>Linear pipeline; Airflow overhead not justified</td></tr>
+  <tr><td>Superset / Grafana</td><td>Grafana (live + batch dashboards) on PostgreSQL</td><td>One tool for both layers</td></tr>
+  <tr><td>HDFS</td><td>Defined in Docker Compose but not used; Parquet on local disk</td><td>Single machine; HDFS adds no parallelism here</td></tr>
+  <tr><td>—</td><td>Added: Wikipedia pageviews (1.15 B rows), TMDB API, Steam, PostgreSQL serving layer</td><td>Interest signal, release dates, prices</td></tr>
+</table>
+
+<h2 class="pb">3 Data sources</h2>
+<table>
+  <tr><th>Source</th><th>Content</th><th class="n">Rows (clean)</th><th class="n">Raw size</th><th>Period</th><th>Obtained via</th></tr>
+  <tr><td>Wikimedia pageviews</td><td>Hourly views of every page of every Wikimedia project</td><td class="n">1,153,632,847</td><td class="n">9.9 GB</td><td>1–7 Sep 2026</td><td>168 hourly dump files</td></tr>
+  <tr><td>IMDb non-commercial datasets</td><td>Titles, ratings, alternative titles, cast/crew, episodes</td><td class="n">184,661,759</td><td class="n">1.5 GB</td><td>current</td><td>TSV downloads</td></tr>
+  <tr><td>RARBG catalog dump</td><td>Infohash, release name, category, upload time, size, IMDb id</td><td class="n">2,843,691</td><td class="n">776 MB</td><td>Jun 2007 – May 2023</td><td>SQLite, Internet Archive (MD5-verified)</td></tr>
+  <tr><td>Steam games (Kaggle)</td><td>Price, release date, reviews, owners, genres, tags</td><td class="n">125,854</td><td class="n">1.3 GB</td><td>snapshot Oct 2026</td><td>CSV download</td></tr>
+  <tr><td>TMDB API</td><td>Release dates per country and type, budget, revenue</td><td class="n">13,462 titles · 212,933 dates</td><td class="n">20 MB</td><td>films/TV 2005–2023</td><td>REST API (own fetcher)</td></tr>
+  <tr><td>Tracker scrapes — live</td><td>Seeders, leechers, completed per torrent per tracker</td><td class="n">25,422,936</td><td class="n">0.6 GB</td><td>10 Oct 2026, 10:36–21:00 IST</td><td>BEP 15 UDP scraper → Kafka</td></tr>
+  <tr><td>Tracker scrapes — full scan</td><td>One observation per catalog torrent (opentrackr)</td><td class="n">1,385,068</td><td class="n">0.25 GB</td><td>10 Oct 2026, 11:41–12:29 IST</td><td>Same scraper, 4 parallel workers</td></tr>
+  <tr><td colspan="2"><b>Total</b></td><td class="n"><b>≈ 1.38 billion</b></td><td class="n"><b>≈ 14 GB</b></td><td colspan="2">Data lake on disk ≈ 34 GB (raw + Parquet)</td></tr>
+</table>
+<p>The TMDB fetch targeted the 8,000 most-voted movies and 2,000 most-voted series from IMDb (released 2005–2023) plus 3,481 Indian-language films found through TMDB's discover endpoint, because the IMDb ranking is dominated by English-language titles.</p>
+
+<h2>4 Architecture</h2>
+<p>The system follows the Lambda architecture: a batch layer recomputes analysis tables from immutable raw data, a speed layer processes live tracker observations with low latency, and a serving layer exposes both to dashboards. Everything runs on one machine; Kafka, PostgreSQL, Grafana and the two scraper workers run in Docker Compose, Spark runs in local mode on all 12 cores.</p>
+<figure>
+<svg viewBox="0 0 760 360" width="100%" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#52514e"/></marker></defs>
+  <style>.b{fill:#f4f7fc;stroke:#2a78d6;stroke-width:1.2} .s{fill:#fdf1ec;stroke:#eb6834;stroke-width:1.2} .v{fill:#eef8f3;stroke:#1baf7a;stroke-width:1.2} .t{font-size:11px;fill:#0b0b0b} .h{font-size:12px;font-weight:700} .m{font-size:9.5px;fill:#52514e} .l{stroke:#52514e;stroke-width:1.2;fill:none;marker-end:url(#a)}</style>
+  <text x="10" y="18" class="h" fill="#2a78d6">BATCH LAYER</text>
+  <rect x="10" y="28" width="150" height="128" rx="5" class="b"/>
+  <text x="20" y="46" class="t" font-weight="600">Sources</text>
+  <text x="20" y="64" class="m">RARBG SQLite dump</text><text x="20" y="80" class="m">IMDb TSV · Wikipedia dumps</text>
+  <text x="20" y="96" class="m">Steam CSV · TMDB API</text><text x="20" y="112" class="m">Full tracker scan (JSONL)</text>
+  <text x="20" y="140" class="m">dataset/raw · 13.6 GB</text>
+  <rect x="200" y="40" width="150" height="100" rx="5" class="b"/>
+  <text x="210" y="58" class="t" font-weight="600">Spark ETL (PySpark)</text>
+  <text x="210" y="76" class="m">parse · clean · try_cast</text><text x="210" y="92" class="m">dedup · guessit titles</text>
+  <text x="210" y="108" class="m">title matching · joins</text><text x="210" y="128" class="m">local[*], 12 cores</text>
+  <rect x="390" y="40" width="150" height="100" rx="5" class="b"/>
+  <text x="400" y="58" class="t" font-weight="600">Parquet data lake</text>
+  <text x="400" y="76" class="m">staging/ (per source)</text><text x="400" y="92" class="m">curated/ (joined)</text>
+  <text x="400" y="108" class="m">zstd, partitioned</text><text x="400" y="128" class="m">1.38 B rows</text>
+  <rect x="580" y="28" width="170" height="60" rx="5" class="b"/>
+  <text x="590" y="46" class="t" font-weight="600">Spark SQL analyses</text><text x="590" y="64" class="m">A1–A7 tables + figures</text>
+  <rect x="580" y="96" width="170" height="60" rx="5" class="b"/>
+  <text x="590" y="114" class="t" font-weight="600">Spark MLlib</text><text x="590" y="132" class="m">GLM · logistic · RF · OLS</text>
+  <path d="M160 92 H198" class="l"/><path d="M350 90 H388" class="l"/><path d="M540 70 L578 58" class="l"/><path d="M540 110 L578 124" class="l"/>
+
+  <text x="10" y="196" class="h" fill="#eb6834">SPEED LAYER</text>
+  <rect x="10" y="206" width="150" height="84" rx="5" class="s"/>
+  <text x="20" y="224" class="t" font-weight="600">Tracker scrapers ×2</text>
+  <text x="20" y="242" class="m">BEP 15 UDP, 5 trackers</text><text x="20" y="258" class="m">tier 1: 16.5k torrents/2 min</text><text x="20" y="274" class="m">tier 2: 110k torrents/15 min</text>
+  <rect x="200" y="218" width="150" height="60" rx="5" class="s"/>
+  <text x="210" y="236" class="t" font-weight="600">Apache Kafka (KRaft)</text><text x="210" y="254" class="m">topic tracker.scrapes, 6 part.</text><text x="210" y="268" class="m">25.4 M messages</text>
+  <rect x="390" y="210" width="150" height="76" rx="5" class="s"/>
+  <text x="400" y="228" class="t" font-weight="600">Structured Streaming</text>
+  <text x="400" y="246" class="m">1-min micro-batches</text><text x="400" y="262" class="m">exactly-once to Postgres</text><text x="400" y="278" class="m">via batch-id ledger</text>
+  <path d="M160 248 H198" class="l"/><path d="M350 248 H388" class="l"/>
+  <path d="M465 210 L465 142" class="l"/><text x="472" y="180" class="m">append stream/swarm</text>
+
+  <text x="580" y="196" class="h" fill="#1baf7a">SERVING LAYER</text>
+  <rect x="580" y="206" width="170" height="60" rx="5" class="v"/>
+  <text x="590" y="224" class="t" font-weight="600">PostgreSQL 16</text><text x="590" y="242" class="m">swarm_minute · swarm_latest</text><text x="590" y="256" class="m">analytics.* (batch results)</text>
+  <rect x="580" y="286" width="170" height="60" rx="5" class="v"/>
+  <text x="590" y="304" class="t" font-weight="600">Grafana 13</text><text x="590" y="322" class="m">Live Torrent Swarms</text><text x="590" y="336" class="m">Batch Analytics</text>
+  <path d="M540 248 H578" class="l"/><path d="M665 266 V284" class="l"/>
+  <path d="M735 156 V204" class="l"/><text x="690" y="184" class="m">results</text>
+  <rect x="10" y="306" width="540" height="40" rx="5" fill="#fafaf8" stroke="#e4e3df"/>
+  <text x="20" y="322" class="m">Orchestration: Docker Compose (Kafka, Postgres, Grafana, scrapers) · shell runners + cron · uv-managed Python env</text>
+  <text x="20" y="338" class="m">Reliability: Kafka retains 7 days · JSONL backup of every scrape · Spark checkpoints · restart policies · @reboot recovery</text>
+</svg>
+<figcaption><b>Figure 1.</b> System architecture. Blue: batch layer; orange: speed layer; green: serving layer.</figcaption>
+</figure>
+<table>
+  <tr><th>Technology</th><th>Role</th><th>How it is used</th></tr>
+  <tr><td>Apache Spark 4.0 (PySpark)</td><td>Batch processing</td><td>All ETL and joins; reads gzip dumps, SQLite exports, CSV/JSON; writes Parquet. <code>mapInPandas</code> parallelises Python title parsing.</td></tr>
+  <tr><td>Spark SQL</td><td>Querying</td><td>All analyses (window functions, pivots, percentiles) over temp views of Parquet tables.</td></tr>
+  <tr><td>Spark Structured Streaming</td><td>Stream processing</td><td>Kafka source → Parquet sink (append) and <code>foreachBatch</code> sink to PostgreSQL, one-minute triggers, checkpointed.</td></tr>
+  <tr><td>Spark MLlib</td><td>Modelling</td><td>Poisson GLM (decay), logistic regression and random forest (games), OLS (genres), Spearman correlation (interest).</td></tr>
+  <tr><td>Apache Kafka 3.9 (KRaft)</td><td>Ingestion buffer</td><td>Topic <code>tracker.scrapes</code>, 6 partitions, 7-day retention; decouples scrapers from Spark.</td></tr>
+  <tr><td>Apache Parquet</td><td>Storage</td><td>Columnar, zstd-compressed, partitioned by date / category / title type.</td></tr>
+  <tr><td>PostgreSQL 16</td><td>Serving</td><td>Per-minute stream aggregates, latest swarm per torrent, batch results for Grafana.</td></tr>
+  <tr><td>Grafana 13</td><td>Visualisation</td><td>Live dashboard (refreshes every minute) and batch dashboard, provisioned from JSON.</td></tr>
+  <tr><td>Docker Compose</td><td>Environment</td><td>One-command start of Kafka, PostgreSQL, Grafana and the scraper workers.</td></tr>
+</table>
+
+<h2>5 Pipeline implementation</h2>
+<h3>5.1 Ingestion</h3>
+<ul>
+  <li><b>Bulk downloads</b> (<code>ingest/download_*.sh</code>): resumable <code>wget -c</code>; the RARBG dump is checked against its published MD5.</li>
+  <li><b>TMDB fetcher</b> (<code>ingest/fetch_tmdb.py</code>): 20 threads behind a shared 35 requests/s rate limiter, retry on HTTP 429/5xx, resumable JSONL output. 10,000 titles in 12 minutes; 9,956 matched.</li>
+  <li><b>Tracker scraper</b> (<code>ingest/tracker_scraper.py</code>): implements the BEP 15 UDP protocol (connect → connection id → scrape of up to 74 infohashes per packet). Each tracker runs its own loop so a slow or dead tracker never delays the others; trackers that reject large packets get smaller batches (exodus: 50); a tracker returning nothing backs off for 10 minutes. Every row goes to Kafka and to an hourly JSONL backup.</li>
+</ul>
+<h3>5.2 Batch ETL (staging layer)</h3>
+<ul>
+  <li><b>Wikipedia:</b> 168 gzip files read as text; the hour is taken from each file name; 1.15 billion rows written in 20.2 minutes.</li>
+  <li><b>RARBG:</b> SQLite streamed to Parquet in 250 k-row chunks, then deduplicated by infohash and mapped from 25 RARBG categories to six. Release names are parsed with <i>guessit</i> (title, year, season, episode, resolution, source, codec, release group) via <code>mapInPandas</code> on 12 workers: 2.84 M names in 60 minutes.</li>
+  <li><b>IMDb</b> (4 tables, 184.7 M rows, 7.3 min), <b>Steam</b> and <b>TMDB</b>: typed, normalised, with derived columns such as <code>home_release_date</code>.</li>
+  <li>Spark 4 runs in ANSI mode, where one malformed value aborts a job; every conversion uses <code>try_cast</code> / <code>try_to_timestamp</code> so bad values become null and are filtered.</li>
+</ul>
+<h3>5.3 Speed layer</h3>
+<p>The streaming job reads Kafka from the earliest offset with at most 2 M records per trigger. One query appends raw rows to <code>stream/swarm</code> (Parquet, partitioned by date); a second uses <code>foreachBatch</code> to upsert per-minute aggregates and the latest observation per torrent into PostgreSQL. Each micro-batch id is inserted into a ledger table in the same transaction as the data, so a batch replayed after a crash is skipped: output to PostgreSQL is exactly-once (verified by deleting the checkpoint and replaying). Live collection used two scraper tiers: 16,555 torrents known to be alive, scraped about every 2 minutes, and 110,036 further alive torrents found by the full scan, every 11–20 minutes. A graceful stop at 21:00 stopped the scrapers, let Spark drain Kafka for three minutes and stopped the stream: Kafka's 25,422,936 messages equal the rows written, and no gap longer than five minutes occurred.</p>
+<h3>5.4 Integration (curated layer)</h3>
+<ul>
+  <li><b>Movies/TV → IMDb, TMDB:</b> exact join on the IMDb id stored in RARBG.</li>
+  <li><b>Games → Steam:</b> no shared id. Release names are cleaned (scene-group suffixes detected from the data — any suffix ending ≥ 15 game torrents —, version/update/platform tags cut, punctuation normalised) and matched exactly, then without edition words, then by the longest Steam name that is a prefix of the release (DLC → base game). 79 % of game torrents and 81.6 % of PC game torrents matched; a manual check of 35 random matches found one error.</li>
+  <li><b>Titles → Wikipedia:</b> candidate page names (<code>Title_(YEAR_film)</code>, <code>Title_(film)</code>, <code>Title</code>) are broadcast-joined against English pageviews; the most specific page with views wins. The 1.15 B-row table is filtered in one minute. Single-word bare names are flagged low-confidence (e.g. the game “Krakatoa” matched the volcano) and excluded.</li>
+  <li><b>Swarm summaries:</b> 25.4 M live rows → 6.46 M torrent × 10-minute slots → per-torrent day statistics in 72 seconds.</li>
+</ul>
+<h3>5.5 Performance</h3>
+<table>
+  <tr><th>Job</th><th class="n">Input</th><th class="n">Output</th><th class="n">Wall time</th></tr>
+  <tr><td>Wikipedia ETL</td><td class="n">9.9 GB gzip</td><td class="n">1,153,632,847 rows</td><td class="n">20.2 min</td></tr>
+  <tr><td>IMDb ETL (4 tables)</td><td class="n">1.5 GB gzip</td><td class="n">184,661,759 rows</td><td class="n">7.3 min</td></tr>
+  <tr><td>RARBG ETL incl. guessit parsing</td><td class="n">2.84 M names</td><td class="n">2,843,691 rows</td><td class="n">60.0 min</td></tr>
+  <tr><td>Torrent enrichment (IMDb + TMDB + Steam joins)</td><td class="n">1.39 M torrents</td><td class="n">1,390,470 rows</td><td class="n">35 s</td></tr>
+  <tr><td>Wikipedia interest join</td><td class="n">1.15 B rows</td><td class="n">57,284 titles</td><td class="n">1.0 min</td></tr>
+  <tr><td>Full catalog tracker scan (4 workers)</td><td class="n">1,390,470 hashes</td><td class="n">1,385,068 rows</td><td class="n">48 min</td></tr>
+  <tr><td>Live collection (2 scrapers → Kafka → Spark)</td><td class="n">10.4 h</td><td class="n">25,422,936 rows</td><td class="n">peak 3.56 M rows/h</td></tr>
+  <tr><td>Swarm summaries after collection</td><td class="n">25.4 M rows</td><td class="n">6.46 M slots</td><td class="n">72 s</td></tr>
+  <tr><td>All analyses A1–A7 incl. MLlib</td><td class="n">curated tables</td><td class="n">12 figures, 21 tables</td><td class="n">≈ 3 min</td></tr>
+  <tr><td>Validation (26 checks)</td><td class="n">all layers</td><td class="n">26 / 26 pass</td><td class="n">2.7 min</td></tr>
+</table>
+
+<h2 class="pb">6 Results</h2>
+<h3>6.1 A1 — Cross-media activity index</h3>
+<figure><img src="figures/a1_uploads_by_year.png"><figcaption><b>Figure 2.</b> RARBG uploads per year by category (log scale).</figcaption></figure>
+<p>TV uploads grew from 1,068 in 2010 to about 100,000 per year from 2018, overtaking adult content; movies reached about 60,000 per year. Game uploads rose steadily to 5,500–7,700 per year. Release quality shifted sharply: 1080p went from 2 % of movie uploads in 2008 to 62 % in 2022, 4K reached 8 %, and x265/HEVC encoding jumped from 1 % (2019) to 30 % (2022) once streaming services offered HEVC sources.</p>
+<figure><img src="figures/a1_movie_resolution.png"><figcaption><b>Figure 3.</b> Movie uploads by resolution, 2008–2022.</figcaption></figure>
+
+<h3>6.2 A2 — Release-to-leak lag</h3>
+<p>The dump only contains torrents still listed in May 2023, and RARBG replaced old releases over time, so for films released before about 2017 the earliest torrent in the dump is often years after the real first release (median 3,363 days for 2009 films). Leak lag is therefore measured for the 1,953 films released January 2018 – March 2023 that have TMDB dates.</p>
+<figure><img src="figures/a2_leak_vs_window.png"><figcaption><b>Figure 4.</b> Median days from first theatrical release to the first RARBG torrent and to the legal home release.</figcaption></figure>
+<div class="key"><ul>
+  <li>Median cinema-to-torrent lag fell from 76 days (2018) to <b>9 days (2020–2021)</b>, tracking the collapse of the theatrical window (median 0 days in 2020–2021).</li>
+  <li>For films released 2020–2023, <b>66–70 % were on RARBG by the day after their legal home release</b> and <b>18–25 % before it</b> (Figure 5).</li>
+  <li>The first torrent is a <b>WEB</b> copy for 71 % of 2018 films and 90–100 % from 2020; camera recordings were essentially never first (0.1 %), consistent with RARBG's no-CAM policy.</li>
+  <li>New TV series: median <b>1 day</b> from premiere to first torrent (1,162 series; 58 % within two days).</li>
+  <li>English-language films leaked fastest (median 20 days, 18 versions); Indian-language films 83 days (45 films); other languages 146 days. RARBG carried few Indian films.</li>
+</ul></div>
+<figure><img src="figures/a2_leak_vs_home_ecdf.png"><figcaption><b>Figure 5.</b> Cumulative share of films on RARBG relative to their legal home release (day 0). The vertical jump at day 0 is the WEB-DL appearing on release day.</figcaption></figure>
+
+<h3>6.3 A3 — Popularity decay</h3>
+<p>The full catalog scan found 124,476 of 1,385,068 movie/TV/game torrents alive (9.0 %). Per torrent, older uploads look <i>healthier</i> than recent ones (Figure 6, left) — an artefact of survivorship (unpopular old releases were deleted) and of version splitting (new titles spread seeders over WEB, Blu-ray, 4K and repacks). We therefore modelled decay per <i>title</i>, summing seeders over all versions, with MLlib Poisson regressions on titles released 2012–2023 and compared exponential and power-law forms by AIC.</p>
+<figure><img src="figures/a3_decay.png"><figcaption><b>Figure 6.</b> Left: share of torrents alive by upload year. Right: mean seeders per title by release year (log scale).</figcaption></figure>
+<table>
+  <tr><th>Category</th><th class="n">Titles</th><th>Best model (AIC)</th><th>Interpretation</th></tr>
+  <tr><td>Movie</td><td class="n">34,632</td><td>power law, seeders ∝ age<sup>−0.73</sup></td><td>a 10-year-old film keeps ≈ 41 % of the seeders of a 3-year-old film</td></tr>
+  <tr><td>TV</td><td class="n">10,301</td><td>power law, exponent +1.65</td><td>no decay: long-running series accumulate seasons and stay shared</td></tr>
+  <tr><td>Game</td><td class="n">10,871</td><td>exponential, +16 %/year</td><td>no decay: classic games persist, new ones are split across many updates</td></tr>
+</table>
+
+<h3>6.4 A4 — Public interest vs piracy</h3>
+<figure><img src="figures/a4_wiki_vs_seeders.png"><figcaption><b>Figure 7.</b> English Wikipedia views (1–7 Sep 2026) vs current seeders summed over all versions (Oct 2026), per title.</figcaption></figure>
+<p>Interest and piracy are positively but moderately related: Spearman ρ between weekly views and current seeders is <b>0.47 for 41,901 films, 0.41 for 8,422 series and 0.24 for 3,273 games</b>. Correlation with the number of torrent versions is weaker (ρ ≈ 0.21–0.26), because versions reflect 2007–2023 upload activity rather than current interest. Many widely read titles have small swarms, so encyclopaedic interest is only a partial proxy for piracy demand.</p>
+
+<h3>6.5 A5 — Games: price, popularity and type</h3>
+<figure><img src="figures/a5_pirated_by_band.png"><figcaption><b>Figure 8.</b> Share of Steam games (2018–2022, ≥ 100 reviews, n = 9,283) with at least one RARBG torrent, by price and by number of reviews.</figcaption></figure>
+<p>38.5 % of the 9,283 games are on RARBG. Free-to-play games are almost never pirated (5 %, nothing to gain), paid games between $5 and $40 at 52–54 %, and games above $40 at 38 % — plausibly because AAA titles more often ship with strong DRM that delays cracking, though DRM is not in our data. Piracy rises steadily with popularity (27 % → 65 %). In an MLlib logistic regression on standardised features (80/20 split, <b>test AUC 0.83</b>), popularity (odds × 1.84 per SD), single-player (× 1.79) and price (× 1.55) increase piracy; Early Access (× 0.51), free-to-play (× 0.54), Casual (× 0.71) and MMO (× 0.77) decrease it. A random forest predicting log(torrent count) reaches test R² = 0.35, with popularity and price as the two most important features.</p>
+<figure class="half"><img src="figures/a5_game_piracy_odds.png"><figcaption><b>Figure 9.</b> Logistic-regression odds ratios per standard deviation (log scale).</figcaption></figure>
+
+<h3>6.6 A6 — Genres pirated more than their popularity predicts</h3>
+<figure class="half"><img src="figures/a6_genre_excess_piracy.png"><figcaption><b>Figure 10.</b> Excess torrent versions by genre relative to an equally popular film of the same year (95 % CI).</figcaption></figure>
+<p>For all 8,024 IMDb films of 2018–2022 with ≥ 1,000 votes (including the 2,507 with no torrent), an MLlib OLS model of log(1 + torrent versions) on log(votes) and release year explains 19 % of variance; each extra 1 % of votes brings ≈ 0.36 % more versions. Residuals by genre show <b>Sci-Fi (+59 %), Horror (+56 %), Documentary (+42 %) and Adventure (+35 %)</b> pirated well above their popularity, and <b>Romance (−18 %), Comedy (−12 %) and Drama (−11 %)</b> below. Genre is partly confounded with language and market (English-language genre films are more likely to be on an English-language site).</p>
+
+<h3>6.7 A7 — Swarms through the day</h3>
+<figure><img src="figures/a7_swarm_day.png"><figcaption><b>Figure 11.</b> Seeders relative to each torrent's daily average, and leechers per seeder, 12:40–20:50 IST, 10 Oct 2026 (opentrackr; fixed panel of 110,705 torrents alive for most of the day).</figcaption></figure>
+<p>Movie and TV swarms are remarkably stable over the observed window (within ±1.5 % of their daily mean), whereas game swarms grew about 11 % from Indian midday into the European afternoon and US morning. Leechers per seeder are steady: 0.42 for TV, 0.35 for movies and 0.24 for games, i.e. TV is the most "in-demand" medium relative to supply. Across the alive torrents, opentrackr recorded about 5,460 completed movie downloads, 1,730 TV and 240 game downloads per hour. One day cannot show whether the game pattern repeats.</p>
+<figure><img src="figures/grafana_live.png"><figcaption><b>Figure 12.</b> Grafana "Live Torrent Swarms" dashboard at the end of collection: 248,569 torrents tracked, 611,543 seeders, 25.4 M rows in 603 micro-batches.</figcaption></figure>
+
+<h2 class="pb">7 Validation: how we know the results are right</h2>
+<p><code>analysis/validate.py</code> runs 26 automated checks across every layer (all pass). They establish that nothing was lost between sources and Parquet, that the streaming path is complete and exactly-once, that the tracker measurements are consistent, and that joined dates and parsed titles agree with known facts. Model quality is measured on held-out data.</p>
+<table>
+  <tr><th>What is checked</th><th class="n">Expected</th><th class="n">Observed</th><th>Result</th></tr>
+  <tr><td>RARBG SQLite rows → staging rows; infohashes unique</td><td class="n">2,843,691</td><td class="n">2,843,691</td><td>exact</td></tr>
+  <tr><td>Wikipedia raw lines → staging rows (168 of 168 hours)</td><td class="n">1,153,725,864</td><td class="n">1,153,632,847</td><td>93,017 malformed lines dropped (0.008 %)</td></tr>
+  <tr><td>IMDb basics / akas / principals / episode raw → staging</td><td class="n">184,661,759</td><td class="n">184,661,759</td><td>exact, all four tables</td></tr>
+  <tr><td>Steam CSV rows → staging (dedup by app id)</td><td class="n">125,855</td><td class="n">125,854</td><td>1 duplicate dropped</td></tr>
+  <tr><td>TMDB fetched records → staging titles</td><td class="n">13,462</td><td class="n">13,462</td><td>exact</td></tr>
+  <tr><td>Kafka messages = PostgreSQL batch ledger = Parquet rows</td><td class="n">25,422,936</td><td class="n">25,422,936 = 25,422,936</td><td><b>zero loss</b></td></tr>
+  <tr><td>Micro-batches applied twice (exactly-once)</td><td class="n">0</td><td class="n">0 of 603</td><td>pass; replay test also passed</td></tr>
+  <tr><td>JSONL backup lines vs Parquet</td><td class="n">25,422,936</td><td class="n">25,421,825</td><td>backup buffer not flushed at forced stop (0.004 %); primary path complete</td></tr>
+  <tr><td>All live observations inside the collection window; no negative counts</td><td class="n">10:36–21:01 IST</td><td class="n">10:35–21:00 IST</td><td>pass</td></tr>
+  <tr><td>Two independent trackers agree on the same swarm (opentrackr vs stealth.si, 20-min slots)</td><td class="n">ρ &gt; 0.7</td><td class="n">ρ = 0.736 (3.30 M pairs)</td><td>measurements are consistent</td></tr>
+  <tr><td>Full-catalog scan agrees with live scrapes of the same torrents</td><td class="n">ρ &gt; 0.8</td><td class="n">ρ = 0.977 (248,019 torrents)</td><td>scanner reproducible</td></tr>
+  <tr><td>Theatrical dates: Inception, Avengers: Endgame, The Dark Knight, Interstellar</td><td class="n">public record</td><td class="n">4 / 4 within ±1 day</td><td>joins and date logic correct</td></tr>
+  <tr><td>Release-name parsing (Inception 2160p releases, The Mandalorian S01E01)</td><td class="n">title, year, S/E, resolution</td><td class="n">4 / 4 correct</td><td>guessit output correct</td></tr>
+</table>
+<table>
+  <tr><th>Model</th><th>Validation</th><th class="n">Metric</th></tr>
+  <tr><td>Game piracy, logistic regression (A5)</td><td>80/20 train/test split, seed 42</td><td class="n">test AUC 0.826</td></tr>
+  <tr><td>Game torrent count, random forest, 200 trees (A5)</td><td>same split</td><td class="n">test R² 0.348, RMSE 0.644 (log scale)</td></tr>
+  <tr><td>Genre excess piracy, OLS (A6)</td><td>95 % confidence intervals per genre</td><td class="n">R² 0.193; Sci-Fi/Horror CI exclude 0</td></tr>
+  <tr><td>Decay, Poisson GLM (A3)</td><td>exponential vs power law compared by AIC</td><td class="n">power law better for movies (ΔAIC 567)</td></tr>
+  <tr><td>Steam matching (A5)</td><td>manual check of 35 random matches</td><td class="n">34 / 35 correct</td></tr>
+  <tr><td>Wikipedia matching (A4)</td><td>manual check of top matches; low-confidence flag</td><td class="n">3,787 ambiguous matches excluded</td></tr>
+</table>
+
+<h2>8 Data-quality problems found and fixed</h2>
+<table>
+  <tr><th>Problem</th><th>Effect if unfixed</th><th>Fix</th></tr>
+  <tr><td>PySpark converts collected timestamps to the machine's local zone (IST) before writing to PostgreSQL</td><td>All stream aggregates 5 h 30 min late</td><td>Force the Python process and Spark session to UTC</td></tr>
+  <tr><td>Steam CSV header merges <code>Discount</code> and <code>DLC count</code> (39 names, 40 values per row)</td><td>Every column after Price shifted by one</td><td>Ignore the header, supply a 40-column schema</td></tr>
+  <tr><td>Spark 4 ANSI mode aborts on one bad cast</td><td>Billion-row jobs fail on a single malformed line</td><td><code>try_cast</code> / <code>try_to_timestamp</code> everywhere</td></tr>
+  <tr><td>US digital release dates missing (pre-2013) or late re-releases (e.g. 2012 film → 2024)</td><td>Leak lag wrong or undefined for most films</td><td>Home release = earliest digital/physical date in any country after theatrical</td></tr>
+  <tr><td>RARBG dump incomplete before ~2017</td><td>Leak lag of years for older films</td><td>Restrict leak-lag analysis to 2018+ releases</td></tr>
+  <tr><td>Ambiguous Wikipedia page names</td><td>Game "Krakatoa" credited with volcano's views</td><td>Most-specific page first; confidence flag; drop low</td></tr>
+  <tr><td>Scraper gave up on a tracker after 10 scattered timeouts; one tracker rejects &gt; 60 hashes per packet; slowest tracker gated every round</td><td>3 of 5 trackers returned nothing; rounds 4× slower</td><td>Consecutive-error limit, per-tracker batch size, independent loops per tracker</td></tr>
+  <tr><td>Swarm size = max over trackers; tier-2 torrents selected because they were alive at noon</td><td>Intra-day curve showed tracker outages and regression to the mean, not real change</td><td>Single tracker, fixed panel of torrents alive for most of the day, per-torrent normalisation</td></tr>
+  <tr><td>Per-torrent decay mixed survivorship and version splitting</td><td>"Older torrents have more seeders"</td><td>Model decay per title, summing all versions</td></tr>
+</table>
+
+<h2>9 Limitations</h2>
+<ul>
+  <li><b>One site, one day.</b> RARBG was a large but English-centric site that closed in May 2023; current swarms are measured on one day, so weekly or seasonal patterns are not covered.</li>
+  <li><b>Trackers see part of each swarm.</b> Peers found via DHT or other trackers are invisible; counts differ by tracker, so analyses use the maximum or a single tracker consistently.</li>
+  <li><b>Cross-sectional decay.</b> Survivorship remains in the per-title model; a true decay curve needs repeated observations of the same torrents over months.</li>
+  <li><b>Matching error.</b> ≈ 3 % of sampled Steam matches were wrong; 21 % of game torrents are unmatched, so "not pirated" is an upper bound.</li>
+  <li><b>Different time frames.</b> Wikipedia views (Sep 2026) and seeders (Oct 2026) are recent, upload counts span 2007–2023; Steam prices are current, not at release.</li>
+  <li><b>Associations only.</b> No result is a causal effect; e.g. the lower piracy of $40+ games is consistent with DRM but not tested.</li>
+</ul>
+
+<h2>10 Conclusion and future work</h2>
+<p>We built and ran an end-to-end Lambda pipeline that combines a 1.38-billion-row batch data lake with a live Kafka → Spark Structured Streaming feed of 25.4 million tracker observations, delivered exactly-once into a PostgreSQL serving layer and two Grafana dashboards, on a single laptop. The data show that piracy now follows legal digital release within a day for most films, that film swarms decay as a power law while TV and games persist, that free and online-only games are rarely pirated while popular single-player games are, and that Sci-Fi and Horror are pirated well beyond their popularity. Natural extensions are a weeks-long scrape to study daily and weekly cycles and true decay, a DHT crawler to see peers beyond trackers, DRM metadata (e.g. PCGamingWiki) to test the DRM hypothesis directly, and running the same jobs on a multi-node Spark/HDFS cluster.</p>
+
+<h2>Appendix A — Data model (main tables)</h2>
+<table>
+  <tr><th>Table</th><th class="n">Rows</th><th>Key</th><th>Main columns</th></tr>
+  <tr><td>staging/wiki_pageviews</td><td class="n">1,153,632,847</td><td>page, hour</td><td>project, page_title, views, hour (partitioned by date)</td></tr>
+  <tr><td>staging/imdb_principals · akas · titles · episodes</td><td class="n">102.2 M · 59.7 M · 12.8 M · 9.9 M</td><td>tconst</td><td>cast/crew; localised titles; type, year, genres, rating, votes; series links</td></tr>
+  <tr><td>staging/torrents</td><td class="n">2,843,691</td><td>infohash</td><td>title, category, added_at, size, imdb_id, guessit fields</td></tr>
+  <tr><td>staging/swarm_fullscan</td><td class="n">1,385,068</td><td>infohash</td><td>seeders, leechers, completed, scraped_at</td></tr>
+  <tr><td>staging/tmdb_titles · tmdb_release_dates</td><td class="n">13,462 · 212,933</td><td>imdb_id</td><td>theatrical / digital / physical / home-release dates (any country, US, India), budget, revenue</td></tr>
+  <tr><td>staging/steam_games</td><td class="n">125,854</td><td>app_id</td><td>price, owners, reviews, review score, genres, categories, tags</td></tr>
+  <tr><td>stream/swarm</td><td class="n">25,422,936</td><td>infohash, tracker, time</td><td>seeders, leechers, completed, scraped_at</td></tr>
+  <tr><td>curated/torrents_enriched</td><td class="n">1,390,470</td><td>infohash</td><td>torrent + IMDb + TMDB + Steam columns; days from release to upload</td></tr>
+  <tr><td>curated/swarm_slots · swarm_torrent_day</td><td class="n">6,459,735 · 248,569</td><td>infohash (, slot)</td><td>10-min swarm size; per-torrent day statistics and download rate</td></tr>
+  <tr><td>curated/wiki_interest · wiki_daily</td><td class="n">57,284 · 362,477</td><td>entity</td><td>matched page, weekly / daily views, match confidence</td></tr>
+</table>
+<p class="muted">Full column definitions: <code>docs/schema.md</code> in the repository.</p>
+
+<h2>Appendix B — Reproducing the results</h2>
+<pre>uv sync                                              # Python env: PySpark 4.0, guessit, kafka, psycopg
+docker compose -f infra/docker-compose.yml up -d     # Kafka :9092, PostgreSQL :5432, Grafana :3000
+ingest/download_imdb.sh; ingest/download_wiki_pageviews.sh 2026-09-01 7; ingest/download_rarbg.sh
+uv run python -m ingest.fetch_tmdb; uv run python -m ingest.fetch_tmdb_india   # needs TMDB_TOKEN in .env
+etl/run_phase2.sh                                    # Wikipedia, TMDB, IMDb, RARBG -> staging Parquet
+uv run python -m etl.steam; uv run python -m etl.curate_torrents --pg; uv run python -m etl.curate_wiki
+ingest/run_fullscan.sh                               # one pass over all catalog torrents
+docker compose -f infra/docker-compose.yml --profile scraper up -d   # live scrapers
+streaming/run_stream.sh start; streaming/stop_at.sh 21:00 &          # Structured Streaming + scheduled stop
+analysis/run_final.sh                                # summaries, A1–A7, figures, Grafana tables</pre>
+
+<h2>Appendix C — Repository layout</h2>
+<pre>common/      Spark session factory (UTC, zstd), data paths, .env loader
+ingest/      downloaders, TMDB fetchers, BEP 15 tracker scraper, scrape-target builders
+etl/         Spark jobs: raw -> staging (wiki, imdb, rarbg, steam, tmdb), staging -> curated (joins, swarm, wiki)
+streaming/   Structured Streaming job, start/stop/scheduled-stop/reboot-recovery scripts
+analysis/    A1–A7 (Spark SQL + MLlib), shared figure style, final runner, results/*.csv
+dashboards/  results -> PostgreSQL loader, Grafana batch dashboard generator
+infra/       Docker Compose, PostgreSQL schema, Grafana provisioning and dashboards, scraper image
+docs/        dataset schema          report/   this report, figures
+dataset/     raw/ staging/ curated/ stream/  (≈ 34 GB, not in git)</pre>
+</section>
+</body>
+</html>
