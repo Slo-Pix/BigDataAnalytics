@@ -1,0 +1,7 @@
+{
+  "topic": "tracker.scrapes",
+  "messages": 25422936,
+  "measured_at": "2026-10-10T21:45:00+05:30",
+  "source": "kafka-get-offsets.sh sum of end offsets over 6 partitions, recorded by analysis/validate.py in analysis/results/validation.csv (git commit aace326)",
+  "note": "The Kafka container was recreated at 2026-10-10 22:06 IST when KAFKA_LOG_DIRS was moved onto the kafka-data volume; the original topic (a transport buffer) was lost. Parquet, the PostgreSQL batch ledger and the JSONL backups still hold every row and are re-measured on each run."
+}

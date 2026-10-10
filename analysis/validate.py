@@ -19,7 +19,7 @@ import psycopg
 from pyspark.sql import functions as F
 
 from analysis.style import save_table
-from common.spark import RAW, STAGING, STREAM, get_spark
+from common.spark import RAW, ROOT, STAGING, STREAM, get_spark
 
 PG = "postgresql://bda:bda@localhost:5432/torrent"
 checks = []
@@ -76,14 +76,19 @@ def main():
     kafka = subprocess.run(["docker", "exec", "kafka", "/opt/kafka/bin/kafka-get-offsets.sh", "--bootstrap-server",
                             "localhost:9092", "--topic", "tracker.scrapes"], capture_output=True, text=True).stdout
     kafka_total = sum(int(line.rsplit(":", 1)[1]) for line in kafka.split() if line.count(":") == 2)
+    kafka_note = "measured now from Kafka end offsets"
+    if kafka_total == 0:  # topic gone since collection (see the snapshot's note): use the value recorded before
+        snap = json.loads((ROOT / "analysis" / "results" / "kafka_offsets_snapshot.json").read_text())
+        kafka_total = snap["messages"]
+        kafka_note = f"Kafka value recorded {snap['measured_at']} (topic since removed; see kafka_offsets_snapshot.json)"
     with psycopg.connect(PG) as pg:
         ledger_rows, ledger_batches = pg.execute("SELECT sum(rows), count(*) FROM stream_batches").fetchone()
         dup_batches = pg.execute("SELECT count(*) - count(DISTINCT (query, batch_id)) FROM stream_batches").fetchone()[0]
     swarm = spark.read.parquet(str(STREAM / "swarm"))
     parquet_rows = swarm.count()
     jsonl_rows = sum(sum(1 for _ in open(f)) for d in ("jsonl", "jsonl_wide") for f in (STREAM / d).rglob("*.jsonl"))
-    check("Stream: Kafka messages = Postgres ledger rows", kafka_total, int(ledger_rows))
-    check("Stream: Kafka messages = Parquet rows", kafka_total, parquet_rows)
+    check("Stream: Kafka messages = Postgres ledger rows", kafka_total, int(ledger_rows), note=kafka_note)
+    check("Stream: Kafka messages = Parquet rows", kafka_total, parquet_rows, note=kafka_note)
     check("Stream: no micro-batch applied twice", 0, dup_batches, note=f"{ledger_batches} micro-batches")
     check("Stream: JSONL backup lines = Parquet rows", parquet_rows, jsonl_rows, ok=abs(jsonl_rows - parquet_rows) <= parquet_rows * 0.002,
           note="JSONL write buffer not flushed when the scraper containers were force-stopped at 21:00; Kafka/Parquet complete")

@@ -42,6 +42,9 @@ The professor can also type any SQL ending with `;`, e.g.
 ```bash
 uv run python -m analysis.validate      # 26 / 26 checks, ≈ 3 min — or show analysis/results/validation.csv
 ```
+The Kafka count in the stream checks is the value measured at 21:45 IST on 10 Oct; the original topic was lost
+when the Kafka container was recreated afterwards (see `analysis/results/kafka_offsets_snapshot.json`). Parquet,
+the PostgreSQL ledger and the JSONL backups are re-counted live.
 
 ## 4. Batch results (1 min) — http://localhost:3000/d/batch-analytics
 

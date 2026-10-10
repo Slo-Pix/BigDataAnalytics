@@ -9,8 +9,8 @@ IMDb title.principals: raw rows = staging rows,102198330,102198330,PASS,
 IMDb title.episode: raw rows = staging rows,9935383,9935383,PASS,
 Steam: raw rows vs staging rows (dedup by app_id),125855,125854,PASS,1 duplicate/invalid app_id dropped
 TMDB: fetched 'ok' records = staging titles,13462,13462,PASS,
-Stream: Kafka messages = Postgres ledger rows,25422936,25422936,PASS,
-Stream: Kafka messages = Parquet rows,25422936,25422936,PASS,
+Stream: Kafka messages = Postgres ledger rows,25422936,25422936,PASS,Kafka value recorded 2026-10-10T21:45:00+05:30 (topic since removed; see kafka_offsets_snapshot.json)
+Stream: Kafka messages = Parquet rows,25422936,25422936,PASS,Kafka value recorded 2026-10-10T21:45:00+05:30 (topic since removed; see kafka_offsets_snapshot.json)
 Stream: no micro-batch applied twice,0,0,PASS,603 micro-batches
 Stream: JSONL backup lines = Parquet rows,25422936,25421825,PASS,JSONL write buffer not flushed when the scraper containers were force-stopped at 21:00; Kafka/Parquet complete
 Stream: all observations inside 10 Oct 10:36–21:01 IST,05:06–15:31 UTC,05:05–15:30 UTC,PASS,

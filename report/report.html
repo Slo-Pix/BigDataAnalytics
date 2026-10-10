@@ -274,7 +274,7 @@
   <tr><td>IMDb basics / akas / principals / episode raw → staging</td><td class="n">184,661,759</td><td class="n">184,661,759</td><td>exact, all four tables</td></tr>
   <tr><td>Steam CSV rows → staging (dedup by app id)</td><td class="n">125,855</td><td class="n">125,854</td><td>1 duplicate dropped</td></tr>
   <tr><td>TMDB fetched records → staging titles</td><td class="n">13,462</td><td class="n">13,462</td><td>exact</td></tr>
-  <tr><td>Kafka messages = PostgreSQL batch ledger = Parquet rows</td><td class="n">25,422,936</td><td class="n">25,422,936 = 25,422,936</td><td><b>zero loss</b></td></tr>
+  <tr><td>Kafka messages = PostgreSQL batch ledger = Parquet rows (Kafka end offsets measured 21:45 IST, 10 Oct)</td><td class="n">25,422,936</td><td class="n">25,422,936 = 25,422,936</td><td><b>zero loss</b></td></tr>
   <tr><td>Micro-batches applied twice (exactly-once)</td><td class="n">0</td><td class="n">0 of 603</td><td>pass; replay test also passed</td></tr>
   <tr><td>JSONL backup lines vs Parquet</td><td class="n">25,422,936</td><td class="n">25,421,825</td><td>backup buffer not flushed at forced stop (0.004 %); primary path complete</td></tr>
   <tr><td>All live observations inside the collection window; no negative counts</td><td class="n">10:36–21:01 IST</td><td class="n">10:35–21:00 IST</td><td>pass</td></tr>
@@ -304,6 +304,7 @@
   <tr><td>Ambiguous Wikipedia page names</td><td>Game "Krakatoa" credited with volcano's views</td><td>Most-specific page first; confidence flag; drop low</td></tr>
   <tr><td>Scraper gave up on a tracker after 10 scattered timeouts; one tracker rejects &gt; 60 hashes per packet; slowest tracker gated every round</td><td>3 of 5 trackers returned nothing; rounds 4× slower</td><td>Consecutive-error limit, per-tracker batch size, independent loops per tracker</td></tr>
   <tr><td>Swarm size = max over trackers; tier-2 torrents selected because they were alive at noon</td><td>Intra-day curve showed tracker outages and regression to the mean, not real change</td><td>Single tracker, fixed panel of torrents alive for most of the day, per-torrent normalisation</td></tr>
+  <tr><td>Moving Kafka's log onto its Docker volume after collection recreated the container</td><td>The buffered topic (a transport copy of the stream) was dropped</td><td>No data lost: Parquet, the batch ledger and JSONL hold every row; the Kafka count measured before the change is kept in <code>kafka_offsets_snapshot.json</code></td></tr>
   <tr><td>Per-torrent decay mixed survivorship and version splitting</td><td>"Older torrents have more seeders"</td><td>Model decay per title, summing all versions</td></tr>
 </table>
 
