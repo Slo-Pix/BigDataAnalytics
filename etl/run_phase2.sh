@@ -8,7 +8,7 @@ run() { log "START $1"; if uv run python -m "$1" > "logs/$2.log" 2>&1; then log 
 
 log "waiting for etl.wiki_pageviews to finish"
 while pgrep -f "[p]ython3 -m etl.wiki_pageviews" >/dev/null; do sleep 30; done
-grep -q "^wrote" logs/etl_wiki.log && log "OK    etl.wiki_pageviews" || log "FAIL  etl.wiki_pageviews (see logs/etl_wiki.log)"
+tr "\r" "\n" < logs/etl_wiki.log | grep -q "^wrote" && log "OK    etl.wiki_pageviews" || log "FAIL  etl.wiki_pageviews (see logs/etl_wiki.log)"
 
 run etl.tmdb etl_tmdb
 run etl.imdb etl_imdb
