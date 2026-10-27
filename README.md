@@ -1,4 +1,7 @@
-# Distributed Analytics of Global Torrent Activity — CS404 Big Data Analytics
+# ExposureIQ — Content Exposure Intelligence
+
+A company-facing local pilot for monitoring movie, television and game torrent exposure, built on
+**Distributed Analytics of Global Torrent Activity**, the original CS404 Big Data Analytics research project.
 
 A Lambda-architecture (batch + streaming) pipeline over **1.38 billion rows** of public BitTorrent, film, TV,
 game and Wikipedia metadata. Metadata only: no copyrighted content is downloaded and no peer IP addresses are stored.
@@ -73,10 +76,84 @@ analysis/run_final.sh                                 # swarm summaries, A1–A7
 uv run python -m analysis.validate
 ```
 
-## Project portal and live demo (for the presentation)
+## ExposureIQ company pilot
 
 ```bash
-uv run python -m portal.server   # http://localhost:8800 — overview, live stream, Kafka messages, dataset browser,
+uv run python -m portal.server   # http://localhost:8800
+```
+
+The default site is **ExposureIQ**, a product-oriented interface for movie, TV, and game torrent-exposure
+intelligence. Its dark, rounded **single scrollable landing page** contains Platform, Pricing, About and
+Contact sections. The contact form downloads an enquiry file; it does not pretend to send a message.
+
+Select **Create workspace** to register your company and administrator account; there are no default
+passwords. The authenticated workspace includes private catalogue CSV onboarding and match approval,
+on-demand title-level seeder checks, saved observation history, assigned investigations and notes,
+threshold alerts, CSV/JSON/print-to-PDF reports, daily/weekly summary snapshots, invitations and roles,
+read-only API keys, audit history and operator health. Email/webhook alert delivery is optional and
+must be configured by the operator. [Operator and user-test guide](docs/CWATCH_PILOT.md).
+
+The research catalogue also provides historical search, category/upload-year/activity filters, pagination,
+record details, a browser-local personal watchlist scoped by company/user, and CSV exports.
+Its read-only `/api/contentwatch/catalogue` endpoint filters the complete `curated/swarm_torrent_day`
+Parquet table; the UI displays 25 records per page and permits browsing the first 10,025 matching records.
+Page exports contain only the displayed records. CSVs include source/mode fields and observation timestamps.
+Missing datasets and failed requests are shown as errors, not replaced with sample data.
+
+### Live monitoring and SQL
+
+Open **Live pipeline & SQL** in the authenticated workspace (`/#/live`). Administrators choose 100, 500, or 2,000
+historically busy known torrent hashes, then select **Start live monitoring**. The server checks/starts
+the existing Kafka and PostgreSQL services and launches the existing tracker scraper and Spark stream
+processor. Docker access, Java, and the historical `public.swarm_latest`/`public.torrents` serving data
+are required. Initial startup can take 1–2 minutes; unreachable public UDP trackers can delay observations.
+
+The page shows committed observations, distinct monitored hashes, freshness, recent throughput, and
+the retained serving snapshot. It also provides example queries, an editable read-only PostgreSQL
+console, and query-result CSV exports. Available views:
+
+- `live_latest`: latest observation per `(infohash, tracker)`, joined to catalogue titles/categories.
+- `live_minutes`: per-minute/per-tracker event counts and accumulated peer-count observations.
+- `live_batches`: committed Spark serving batches.
+
+Queries use a dedicated non-superuser database login with SELECT access to these views, read-only
+transactions, a five-second statement timeout, a one-second lock timeout, and a 200-row result cap.
+Use `WHERE scraped_at >= now() - interval '10 minutes'` to distinguish fresh records from retained runs.
+This monitors **known hashes**, not newly discovered releases; tracker counts are not unique people.
+Full raw event history is retained in Parquet; these SQL views expose the serving snapshots/aggregates.
+
+The ExposureIQ pipeline is isolated: topic `tracker.scrapes.cwatch`, PostgreSQL schema `cwatch`,
+`dataset/stream/cwatch`, `_checkpoints_cwatch`, and `jsonl_cwatch`. Start/stop never deletes data,
+topics, or checkpoints. Stop halts only the processes owned by the ExposureIQ monitor, not shared Docker
+services. In-flight Kafka records can be processed after the next start. Logs are written to
+`logs/cwatch-stream.log` and `logs/cwatch-scraper.log`.
+
+Collection continues across page navigation and stops on **Stop collection** or a normal portal
+shutdown. Run a single portal server process: its database reader credentials and process ownership
+are managed in memory. Keep this administrative interface bound to localhost.
+
+**Pilot boundaries:** company records are authenticated and organisation-isolated; the public research
+catalogue and live pipeline are intentionally shared. Title checks are requested on demand, not an
+automated new-release discovery or continuous company-catalogue scanning service. Personal watchlists
+remain browser-local. Scheduled summaries and optional delivery require the portal to remain running.
+There is no billing, server-submitted contact request, email verification, MFA or password-recovery service.
+Keep the single-process server bound to localhost. Internet/commercial deployment requires licensed sources
+(including review/replacement of IMDb non-commercial inputs), HTTPS and additional operational safeguards.
+Historical observations date from 10 Oct 2026 over listings ending May 2023; title checks have their own
+actual timestamps. Counts are not unique people, proof of infringement, downloads or revenue loss.
+
+The dark visual theme pairs rounded navy surfaces with blue accents across the public site and
+workspace. It uses local assets and system fonts and does not require external web services.
+
+```bash
+uv run python -m unittest discover -s portal -p 'test_*.py'
+```
+
+## Research portal and live demo (for the presentation)
+
+```bash
+CWATCH_ENABLE_RESEARCH=1 uv run python -m portal.server
+                                 # http://localhost:8800/research.html — administrator login required; overview, live stream, Kafka messages, dataset browser,
                                  # Spark SQL in the browser, findings, links to Grafana / Kafka UI (:8080) / Spark UI
 ```
 

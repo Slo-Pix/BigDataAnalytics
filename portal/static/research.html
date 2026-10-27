@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ExposureIQ — Research console</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <a href="/">ExposureIQ ↗</a>
+    <nav id="nav">
+      <a href="#overview" data-page="overview">Overview</a>
+      <a href="#stream" data-page="stream">Live stream</a>
+      <a href="#kafka" data-page="kafka">Kafka</a>
+      <a href="#dataset" data-page="dataset">Dataset</a>
+      <a href="#sql" data-page="sql">Spark SQL</a>
+      <a href="#findings" data-page="findings">Findings</a>
+      <a href="#tools" data-page="tools">Tools</a>
+    </nav>
+    <div class="promo"><b>Research demo</b><p id="demoText">Stream tracker observations through Kafka and Spark.</p><button id="demoBtn" class="btn light">Start demo</button></div>
+    <div class="side-links"><a href="/report.pdf" target="_blank">Research report</a><a href="http://localhost:3000" target="_blank">Grafana</a></div>
+  </aside>
+  <main><header class="top"><h1 id="title">Overview</h1><div class="top-right"><span id="livePill" class="pill"><i></i><span>checking…</span></span><span class="pill ghost" id="clock"></span></div></header><section id="page"></section></main>
+</div>
+<div id="lightbox" hidden><img alt=""></div>
+<script src="app.js"></script>
+</body>
+</html>

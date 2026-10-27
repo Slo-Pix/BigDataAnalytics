@@ -9,9 +9,12 @@ Two queries share one Kafka source:
 Usage:
     uv run python -m streaming.swarm_stream                 # run forever, 1-minute micro-batches
     uv run python -m streaming.swarm_stream --once          # process what is in Kafka, then stop
+
+BDA_PG_DSN overrides --pg when supplied, keeping credentials out of process arguments.
 """
 import argparse
 import io
+import os
 
 import psycopg
 from pyspark.sql import DataFrame, functions as F
@@ -101,6 +104,7 @@ def main():
     ap.add_argument("--trigger", default="1 minute")
     ap.add_argument("--once", action="store_true", help="availableNow: drain Kafka then exit")
     args = ap.parse_args()
+    pg_dsn = os.environ.get("BDA_PG_DSN", args.pg)
 
     spark = get_spark("swarm-stream", mem="4g", packages=KAFKA_PKG)
     spark.sparkContext.setLogLevel("WARN")
@@ -129,7 +133,7 @@ def main():
     )
     serving = (
         rows.writeStream.queryName("serving")
-        .foreachBatch(make_serving_writer(args.pg, f"serving:{args.topic}"))
+        .foreachBatch(make_serving_writer(pg_dsn, f"serving:{args.topic}"))
         .option("checkpointLocation", f"{args.checkpoint}/serving")
         .trigger(**trigger)
         .start()

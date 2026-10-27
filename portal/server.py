@@ -1,4 +1,4 @@
-"""Project portal: a local web app that shows the running big-data system live.
+"""ExposureIQ product prototype and the local big-data research console.
 
   http://localhost:8800   (binds to 127.0.0.1 only — it can start/stop the demo and run Spark SQL;
                            port 8800, not 8000, so it never shares a browser origin with other local apps;
@@ -11,12 +11,14 @@ status), and Spark SQL (a SparkSession started on the first query, with every ta
 Usage: uv run python -m portal.server
 """
 import csv
-import os
 import json
+import logging
+import os
 import socket
 import subprocess
 import threading
 import time
+from contextlib import asynccontextmanager
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -24,12 +26,17 @@ from pathlib import Path
 import psycopg
 import pyarrow.dataset as ds
 import uvicorn
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from common.paths import CURATED, ROOT, STAGING, STREAM
+from portal.accounts import AccountStore, accounts_router, require_roles
+from portal.company import company_router, deliver_pending, run_schedules
+from portal.contentwatch import router as contentwatch_router
+from portal.live import LiveMonitor, live_router
+from portal.titles import titles_router
 
 PG = "postgresql://bda:bda@localhost:5432/torrent"
 KAFKA = "localhost:9092"
@@ -44,7 +51,107 @@ SERVICES = [  # name, port, url, role
     ("Spark UI (portal SQL)", 4041, "http://localhost:4041", "Spark SQL queries run from this portal"),
 ]
 
-app = FastAPI(title="Torrent BDA portal")
+live_monitor = LiveMonitor(PG)
+accounts = AccountStore(Path(os.environ.get("CWATCH_APP_DB", ROOT / "dataset" / "app" / "cwatch.sqlite3")))
+maintenance_stop = threading.Event()
+maintenance_health = {"last_error": None}
+
+
+def maintenance():
+    while not maintenance_stop.is_set():
+        try:
+            run_schedules(accounts)
+            deliver_pending(accounts)
+            maintenance_health["last_error"] = None
+        except Exception as error:  # background supervisor must keep failures visible
+            logging.getLogger(__name__).exception("Company maintenance failed")
+            maintenance_health["last_error"] = str(error)
+        maintenance_stop.wait(60)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    worker = threading.Thread(target=maintenance, name="cwatch-maintenance", daemon=True)
+    worker.start()
+    yield
+    maintenance_stop.set()
+    worker.join(timeout=20)
+    live_monitor.shutdown()
+
+
+app = FastAPI(title="ExposureIQ and research API", lifespan=lifespan)
+app.state.accounts = accounts
+app.include_router(accounts_router(accounts))
+app.include_router(company_router(accounts))
+app.include_router(titles_router(accounts))
+app.include_router(contentwatch_router)
+app.include_router(live_router(live_monitor))
+
+
+@app.middleware("http")
+async def protect_workspace(request, call_next):
+    path = request.url.path
+    if path == "/research.html" and os.environ.get("CWATCH_ENABLE_RESEARCH") != "1":
+        return JSONResponse({"detail": "Research console is disabled. See the operator guide."}, status_code=404)
+    if not path.startswith("/api/"):
+        return await call_next(request)
+    if request.method not in ("GET", "HEAD", "OPTIONS"):
+        origin = request.headers.get("origin")
+        if request.headers.get("x-cwatch-request") != "1" or (origin and origin != str(request.base_url).rstrip("/")):
+            return JSONResponse({"detail": "Use a same-origin request with X-CWatch-Request: 1."}, status_code=403)
+        try:
+            length = int(request.headers.get("content-length", "0"))
+        except ValueError:
+            return JSONResponse({"detail": "Invalid Content-Length."}, status_code=400)
+        if length < 0:
+            return JSONResponse({"detail": "Invalid Content-Length."}, status_code=400)
+        if length > 2_000_000:
+            return JSONResponse({"detail": "Request exceeds the 2 MB local-pilot limit."}, status_code=413)
+    if path in ("/api/auth/login", "/api/auth/register", "/api/health"):
+        return await call_next(request)
+    try:
+        actor = accounts.actor(request)
+        accounts.limit(f"http:{actor.user_id}", 180)
+        request.state.actor = actor
+        if not path.startswith(("/api/auth/", "/api/company/", "/api/titles", "/api/contentwatch/", "/api/health/")):
+            if os.environ.get("CWATCH_ENABLE_RESEARCH") != "1":
+                raise HTTPException(404, "Research API is disabled.")
+            require_roles(actor, "admin")
+        if path in ("/api/contentwatch/live/start", "/api/contentwatch/live/stop"):
+            require_roles(actor, "admin")
+        if path == "/api/contentwatch/live/query":
+            require_roles(actor, "admin", "analyst")
+    except HTTPException as error:
+        return JSONResponse({"detail": error.detail}, status_code=error.status_code)
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "same-origin"
+    if request.method == "POST" and path in ("/api/contentwatch/live/start", "/api/contentwatch/live/stop") and response.status_code < 300:
+        with accounts.connect() as con:
+            accounts.audit(con, actor, "pipeline." + path.rsplit("/", 1)[-1], "shared-local-pipeline")
+    return response
+
+
+@app.get("/api/health")
+def public_health():
+    with accounts.connect() as con:
+        con.execute("SELECT 1")
+    return {"service": "ExposureIQ", "status": "ok"}
+
+
+@app.get("/api/health/details")
+def detailed_health(request: Request):
+    actor = request.state.actor
+    require_roles(actor, "admin")
+    return {
+        "status": "degraded" if maintenance_health["last_error"] else "ok",
+        "database_bytes": accounts.path.stat().st_size,
+        "maintenance_error": maintenance_health["last_error"],
+        "email_configured": bool(os.environ.get("CWATCH_SMTP_HOST") and os.environ.get("CWATCH_ALERT_EMAIL")),
+        "webhook_configured": bool(os.environ.get("CWATCH_ALERT_WEBHOOK")),
+        "local_only": True, "shared_pipeline": live_monitor.status(),
+    }
 
 
 def jsonable(v):
@@ -303,5 +410,5 @@ app.mount("/", StaticFiles(directory=STATIC, html=True), name="static")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORTAL_PORT", "8800"))
-    print(f"Dashboard: http://localhost:{port}")
+    print(f"ExposureIQ: http://localhost:{port}")
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
