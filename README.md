@@ -123,7 +123,8 @@ Select **Create workspace** to register your company and administrator account; 
 passwords. The authenticated workspace includes private catalogue CSV onboarding and match approval,
 on-demand title-level seeder checks, saved observation history, assigned investigations and notes,
 threshold alerts, CSV/JSON/print-to-PDF reports, daily/weekly summary snapshots, invitations and roles,
-read-only API keys, audit history and operator health. Email/webhook alert delivery is optional and
+read-only API keys and audit history. Operator health remains available through backend API endpoints.
+Email/webhook alert delivery is optional and
 must be configured by the operator. [Operator and user-test guide](docs/CWATCH_PILOT.md).
 
 ### Company Catalogue and Demo Workflow
@@ -228,8 +229,9 @@ workspace. It uses local assets and system fonts and does not require external w
 
 Headings and interface labels use consistent capitalization while user-entered titles, emails, hashes
 and SQL retain their original casing. Check results use responsive cards and horizontally scrollable
-tables. **System Health** separates database size, background maintenance and notification configuration;
-configured email/webhooks are not proof of delivery. The sidebar retains **Sign Out** but no longer
+tables. The System Health page and navigation entry have been removed; operational checks remain at
+`/api/health` and the administrator-only `/api/health/details`. Configured email/webhooks are not proof
+of delivery. The sidebar retains **Sign Out** but no longer
 shows Settings & Data, Back to Website or a top-right IQ shortcut.
 
 ```bash

@@ -109,14 +109,14 @@ function about() {
   <section class="section split"><div><h2>A billion-row foundation.<br>A carefully scoped view.</h2></div><div>${step("01", "Historical, not universal", "The listing catalogue ends in May 2023; the main tracker collection was on 10 October 2026. A missing record is not proof of no exposure.")}${step("02", "Observations, not people", "Seeders and leechers are tracker-reported counts. They do not establish unique users, downloads, infringement, or lost revenue.")}${step("03", "Traceable, not overclaimed", "Every record includes a hash and observation window. Matches may be imperfect; validate them before making decisions.")}</div></section>
   `, "about");
 }
-const workLinks = [["portfolio", "film", "Company Catalogue"], ["titlecheck", "search", "Check Live Seeders"], ["cases", "report", "Investigations"], ["alerts", "bell", "Alerts & Rules"], ["companyreports", "report", "Company Reports"], ["live", "eye", "Live Pipeline & SQL"], ["explorer", "layers", "Research Catalogue"], ["watchlist", "bookmark", "Personal Watchlist"], ["team", "settings", "Team & API"], ["audit", "report", "Audit History"], ["health", "grid", "System Health"]];
+const workLinks = [["portfolio", "film", "Company Catalogue"], ["titlecheck", "search", "Check Live Seeders"], ["cases", "report", "Investigations"], ["alerts", "bell", "Alerts & Rules"], ["companyreports", "report", "Company Reports"], ["live", "eye", "Live Pipeline & SQL"], ["explorer", "layers", "Research Catalogue"], ["watchlist", "bookmark", "Personal Watchlist"], ["team", "settings", "Team & API"], ["audit", "report", "Audit History"]];
 function workShell(content, active) {
   const pageName = workLinks.find(([path]) => path === active)?.[2] || { workspace: "Overview", activity: "Review Queue", reports: "Reports & Exports", settings: "Workspace & Data" }[active] || displayLabel(active);
   return `<div class="frame"><div class="workspace">
     <aside class="work-sidebar">${brand()}
       <div class="company"><span class="avatar">IQ</span><div><strong>${esc(companySession.actor?.company || "Company workspace")}</strong><small>${esc(companySession.actor?.name)} · ${esc(displayLabel(companySession.actor?.role))}</small></div></div>
       <div class="nav-label">Intelligence workspace</div>
-      <nav class="work-nav" aria-label="Workspace navigation">${workLinks.filter(([path]) => !["team", "audit", "health"].includes(path) || adminRole()).map(([path, symbol, label]) => `<a href="#/${path}" ${active === path ? 'class="active" aria-current="page"' : ""}>${icon(symbol)}${label}</a>`).join("")}</nav>
+      <nav class="work-nav" aria-label="Workspace navigation">${workLinks.filter(([path]) => !["team", "audit"].includes(path) || adminRole()).map(([path, symbol, label]) => `<a href="#/${path}" ${active === path ? 'class="active" aria-current="page"' : ""}>${icon(symbol)}${label}</a>`).join("")}</nav>
       <div class="sidebar-bottom"><button class="button outline small" data-company-action="logout">Sign out</button></div>
     </aside>
     <main id="main" class="work-main" tabindex="-1">
@@ -260,7 +260,7 @@ async function render() {
   if (["login", "register", "join"].includes(route)) { accountPage(route); return; }
   if (route !== "home" && !await requireCompany(signal)) return;
   if (signal.aborted) return;
-  if (["portfolio", "titlecheck", "cases", "alerts", "companyreports", "team", "audit", "health"].includes(route)) {
+  if (["portfolio", "titlecheck", "cases", "alerts", "companyreports", "team", "audit"].includes(route)) {
     document.title = "ExposureIQ — Company workspace"; await companyPage(route, signal); return;
   }
   if (route === "live") livePage(signal);

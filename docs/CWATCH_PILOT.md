@@ -150,10 +150,10 @@ alert. The background worker processes delivery once per minute while the portal
 
 ## Health, backup and recovery
 
-- Public liveness: `/api/health`; administrator details: System Health or `/api/health/details`.
-- System Health groups database size, background maintenance errors, and email/webhook configuration
-  into separate cards. Configured delivery channels are not proof of successful delivery; review
-  individual alert delivery results in Alerts & Rules.
+- Public liveness: `/api/health`; administrator details: `/api/health/details`.
+- The System Health workspace page has been removed. The administrator-only endpoint still reports
+  database size, background maintenance errors, and email/webhook configuration. Configured delivery
+  channels are not proof of successful delivery; review individual results in Alerts & Rules.
 - Maintenance errors are logged and exposed in health, not silently reported as successful.
 - Collection logs: `logs/cwatch-stream.log`, `logs/cwatch-scraper.log`.
 - Stop collection using its button or shut down the portal normally; never use the classroom reset

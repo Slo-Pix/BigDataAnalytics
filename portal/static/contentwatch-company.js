@@ -57,7 +57,7 @@ function accountPage(mode) {
 
 async function companyPage(route, signal) {
   companySession.route = route;
-  const names = { portfolio: "Company Catalogue", titlecheck: "Title-Level Live Check", cases: "Investigations", alerts: "Alerts & Rules", companyreports: "Company Reports", team: "Team & API Access", audit: "Audit History", health: "System Health" };
+  const names = { portfolio: "Company Catalogue", titlecheck: "Title-Level Live Check", cases: "Investigations", alerts: "Alerts & Rules", companyreports: "Company Reports", team: "Team & API Access", audit: "Audit History" };
   document.title = `ExposureIQ — ${names[route]}`;
   root.innerHTML = workShell(heading(names[route]) + companyNotice() + '<div id="company-content">' + loading() + "</div>", route);
   try {
@@ -70,25 +70,6 @@ async function companyPage(route, signal) {
     else if (route === "audit") {
       const data = await companyApi("/api/company/audit", {}, signal);
       if (!signal.aborted) document.querySelector("#company-content").innerHTML = `<section class="panel">${companyTable(["When", "Action", "Entity", "Details"], data.rows.map(row => [esc(date(row.created_at)), esc(displayLabel(row.action.replaceAll(".", " · "))), esc(displayLabel(row.entity)), esc(row.detail)]))}</section>`;
-    } else if (route === "health") {
-      const data = await companyApi("/api/health/details", {}, signal);
-      if (!signal.aborted) {
-        const healthy = data.status === "ok" && !data.maintenance_error;
-        document.querySelector("#company-content").innerHTML = `<section class="panel health-panel">
-          <div class="health-summary">
-            <span class="health-icon">${icon(healthy ? "check" : "info")}</span>
-            <div><h2>Workspace Health</h2><p>Database, maintenance and notification configuration.</p></div>
-            <span class="badge ${healthy ? "health-ok" : "health-warning"}" role="status">${healthy ? "Operational" : data.status === "ok" ? "Needs Attention" : esc(displayLabel(data.status))}</span>
-          </div>
-          <dl class="health-grid">
-            <div class="health-card"><dt>${icon("layers")}Company Database</dt><dd><strong>${number(data.database_bytes)} <span class="health-unit">Bytes</span></strong><p>Storage used by the company database.</p></dd></div>
-            <div class="health-card"><dt>${icon("settings")}Background Maintenance</dt><dd><strong>${data.maintenance_error ? "Needs Attention" : "No Reported Errors"}</strong><p ${data.maintenance_error ? 'class="health-error" role="alert"' : ""}>${esc(data.maintenance_error || "No background maintenance errors reported.")}</p></dd></div>
-            <div class="health-card"><dt>${icon("bell")}Email Delivery</dt><dd><strong>${data.email_configured ? "Configured" : "Not Configured"}</strong><p>${data.email_configured ? "Check individual alerts for delivery results." : "Email is not set up. In-app alerts remain available."}</p></dd></div>
-            <div class="health-card"><dt>${icon("layers")}Webhook Delivery</dt><dd><strong>${data.webhook_configured ? "Configured" : "Not Configured"}</strong><p>${data.webhook_configured ? "Check individual alerts for delivery results." : "An external notification endpoint is not set up."}</p></dd></div>
-          </dl>
-          <div class="health-actions"><a class="button outline" href="/docs" target="_blank" rel="noopener">Open API Documentation ↗</a><a class="button outline" href="#/alerts">View Alerts & Rules</a></div>
-        </section>`;
-      }
     }
   } catch (error) {
     if (!signal.aborted) document.querySelector("#company-content").innerHTML = errorPanel(error);
