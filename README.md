@@ -7,7 +7,22 @@ A Lambda-architecture (batch + streaming) pipeline over **1.38 billion rows** of
 game and Wikipedia metadata. Metadata only: no copyrighted content is downloaded and no peer IP addresses are stored.
 
 **Report:** [report/CS404_Torrent_Analytics_Report.pdf](report/CS404_Torrent_Analytics_Report.pdf) (19 pages) ·
+**Presentation:** [showcase/Big Data Analytics.pdf](showcase/Big%20Data%20Analytics.pdf) ·
 **Schema:** [docs/schema.md](docs/schema.md) · **Build log:** [PHASES.md](PHASES.md)
+
+## Start the Existing Product
+
+With dependencies and research datasets already prepared:
+
+```bash
+uv run python -m portal.server
+# Open http://localhost:8800
+```
+
+Create a company workspace or sign in to an existing account. For the shared streaming feature, Docker,
+Java, Kafka/PostgreSQL and the historical serving tables must also be available. On-demand title checks
+do not require the Kafka/Spark collector. Do not rerun acquisition, ETL or reset scripts just to start
+the site. First-time data preparation is described under [Running it](#running-it).
 
 ## Results at a glance
 
@@ -23,6 +38,22 @@ game and Wikipedia metadata. Metadata only: no copyrighted content is downloaded
 
 All 26 validation checks pass (`uv run python -m analysis.validate`): every source reconciles with its Parquet table,
 Kafka messages = PostgreSQL ledger = Parquet rows (25,422,936, zero loss), independent trackers agree (ρ = 0.74).
+
+These are historical research results, not current product measurements or proof of infringement.
+The six presentation questions use a different order from the analysis modules:
+
+| Slide Question | Analysis Module | Prepared Spark SQL Example |
+|---|---|---|
+| Q1: Activity and release quality | `analysis.a1_activity` | `\run 3`: category/year uploads; not the complete quality analysis |
+| Q2: Decay and persistence | `analysis.a3_decay` | `\run 6`: alive share by upload year; not the fitted decay models |
+| Q3: Release-to-listing lag | `analysis.a2_leak_lag` | `\run 4` / `\run 5`: one film / yearly film summary |
+| Q4: Game characteristics | `analysis.a5_games` | `\run 7`: price bands; not the full regression |
+| Q5: Genre effects | `analysis.a6_genres` | No equivalent preset; use the analysis module and saved results |
+| Q6: Public interest | `analysis.a4_wiki_interest` | No equivalent preset; use the analysis module and saved results |
+
+Run these examples with `uv run python -m demo.sql`; `\list` lists prepared queries. Outputs are under
+[analysis/results/](analysis/results/). The product's live query presets are separate PostgreSQL queries,
+not the six research analyses. Running a historical query now does not make its inputs fresh.
 
 ## Data
 
@@ -45,6 +76,8 @@ plus `stream/` (live data). See [dataset/README.md](dataset/README.md).
 BATCH   raw dumps / APIs ──► Spark ETL (PySpark) ──► Parquet data lake ──► Spark SQL + MLlib ──► results
 SPEED   2 tracker scrapers (BEP 15 UDP) ──► Kafka ──► Spark Structured Streaming ──► Parquet + PostgreSQL
 SERVING PostgreSQL ──► Grafana: "Live Torrent Swarms" + "Batch Analytics" (http://localhost:3000)
+PRODUCT FastAPI ──► ExposureIQ website + company workflows (http://localhost:8800)
+        SQLite: accounts/catalogues/cases/checks/alerts/reports; PostgreSQL: shared live serving data
 ```
 
 Tools: Apache Spark 4.0 (PySpark, Spark SQL, Structured Streaming, MLlib), Apache Kafka 3.9 (KRaft), Apache Parquet,
@@ -93,6 +126,49 @@ threshold alerts, CSV/JSON/print-to-PDF reports, daily/weekly summary snapshots,
 read-only API keys, audit history and operator health. Email/webhook alert delivery is optional and
 must be configured by the operator. [Operator and user-test guide](docs/CWATCH_PILOT.md).
 
+### Company Catalogue and Demo Workflow
+
+The **Research Catalogue** is the shared historical source. The **Company Catalogue** is a private
+selection of titles for a company's saved checks, rules, cases and reports. Uploading is optional:
+search in **Check Live Seeders** and choose **Add to Catalogue** for individual titles.
+
+For bulk onboarding, import a UTF-8 comma-separated CSV with exactly these unique headers:
+
+```csv
+title,category,external_id
+Interstellar,movie,tt0816692
+The Sopranos,tv,
+Portal 2,game,
+```
+
+`external_id` is optional; the alternative header is `title,category`. Keep only the selected columns
+when saving from a spreadsheet: extra unnamed columns can produce duplicate blank headers. Accepted
+categories are `movie`, `tv` and `game`; imports allow up to 200 rows and 1 MB. Imports are atomic:
+validation failure imports nothing. Imported titles remain Pending until a user approves a candidate.
+An approved match is not independent verification of ownership, rights or infringement. Titles absent
+from the source catalogue cannot be made monitorable simply by importing their names.
+
+Demonstrate **Import → Review → Approve → Check → Investigate → Report**:
+
+1. Import an illustrative catalogue and approve the correct title associations.
+2. Before checking, create an enabled title-specific alert rule in **Alerts & Rules**.
+   A low demonstration threshold is for testing the workflow, not a commercial risk recommendation.
+3. Use **Check Seeders** on an approved company title. Portfolio checks are saved and evaluated against
+   rules; ad-hoc title searches/checks are not automatically saved as company check history.
+4. Inspect the timestamp, responding trackers, sampled hashes and failures. A rule triggers only on a
+   successful qualifying check; an existing unresolved alert for that rule/title prevents duplicates.
+5. Create an assigned investigation, update its status and add an actual review note.
+6. Reopen saved records and export the company summary, catalogue CSV or complete check JSON.
+
+Catalogue CSV exports describe title identities and approval decisions, not tracker measurements.
+`title_key` is a catalogue identity (for example `movie|imdb|tt0816692`), not an infohash. The export's
+`exported_at` records file generation, not observation time. Use **Export Observations** in check results
+or **Download JSON** in saved checks for measurements, coverage and observation timestamps.
+
+Signing out preserves company records and does not stop live collection. A newly registered company
+has empty private workflows, while another member of the same company sees its shared records.
+The research catalogue and streaming history are shared across companies and do not reset on login.
+
 The research catalogue also provides historical search, category/upload-year/activity filters, pagination,
 record details, a browser-local personal watchlist scoped by company/user, and CSV exports.
 Its read-only `/api/contentwatch/catalogue` endpoint filters the complete `curated/swarm_torrent_day`
@@ -115,6 +191,11 @@ console, and query-result CSV exports. Available views:
 - `live_latest`: latest observation per `(infohash, tracker)`, joined to catalogue titles/categories.
 - `live_minutes`: per-minute/per-tracker event counts and accumulated peer-count observations.
 - `live_batches`: committed Spark serving batches.
+
+The query field is labelled **Query**; the former SQL Workspace badge has been removed. The execution
+engine is still PostgreSQL, not Spark SQL. The five presets are **Latest Observations**, **Activity by
+Category**, **Minute Throughput**, **All Retained Observations** and **Stream Batch Ledger**. Throughput
+measures collected records, not audience size. Freshness depends on actual observation timestamps.
 
 Queries use a dedicated non-superuser database login with SELECT access to these views, read-only
 transactions, a five-second statement timeout, a one-second lock timeout, and a 200-row result cap.
@@ -145,6 +226,12 @@ actual timestamps. Counts are not unique people, proof of infringement, download
 The dark visual theme pairs rounded navy surfaces with blue accents across the public site and
 workspace. It uses local assets and system fonts and does not require external web services.
 
+Headings and interface labels use consistent capitalization while user-entered titles, emails, hashes
+and SQL retain their original casing. Check results use responsive cards and horizontally scrollable
+tables. **System Health** separates database size, background maintenance and notification configuration;
+configured email/webhooks are not proof of delivery. The sidebar retains **Sign Out** but no longer
+shows Settings & Data, Back to Website or a top-right IQ shortcut.
+
 ```bash
 uv run python -m unittest discover -s portal -p 'test_*.py'
 ```
@@ -158,12 +245,15 @@ CWATCH_ENABLE_RESEARCH=1 uv run python -m portal.server
 ```
 
 ```bash
-demo/live_demo.sh start      # demo scraper -> Kafka -> Spark Structured Streaming (10 s batches) -> PostgreSQL
+demo/live_demo.sh start      # WARNING: resets the separate classroom-demo topic, tables, files and checkpoints
                              # Grafana "Live Demo" (refresh 5 s): http://localhost:3000/d/live-demo
-uv run python -m demo.sql    # interactive Spark SQL over every table; \run 1 counts 1.15 B rows in ~10 s
+uv run python -m demo.sql    # interactive Spark SQL over registered research tables; \list shows examples
 demo/live_demo.sh stop
 ```
-Isolated from the 10 Oct dataset (own topic, Parquet folder and Postgres schema). Step-by-step: [demo/DEMO.md](demo/DEMO.md).
+The classroom stream is isolated from both the 10 Oct research collection and the product's `cwatch`
+pipeline. Do not use its reset script to restart ExposureIQ. Queries 10/11 in the research console read
+the separate `demo_swarm` output, not the product's stream. Spark SQL execution and large scans may take
+time; rehearse with the available machine resources. Step-by-step: [demo/DEMO.md](demo/DEMO.md).
 
 ## Repository
 
@@ -175,8 +265,13 @@ streaming/   Structured Streaming job and its start / stop / scheduled-stop / re
 analysis/    A1–A7 (Spark SQL + MLlib), validation, figure style; results/*.csv
 dashboards/  results → PostgreSQL loader; Grafana live, demo and batch dashboard generators
 demo/        live classroom demo (start/stop), interactive Spark SQL console, prepared queries
-portal/      project portal: FastAPI backend (live data from Postgres, Kafka, Parquet, Docker, Spark) + web UI
+portal/      ExposureIQ: FastAPI, company SQLite store, public site, authenticated workspace, legacy research UI
 infra/       Docker Compose, PostgreSQL schema, Grafana provisioning + dashboard JSON, scraper image
 report/      final report (PDF + HTML source) and figures
-docs/        dataset schema
+docs/        dataset schema and company-pilot operator guide
+showcase/    presentation slides (PDF)
 ```
+
+Research datasets, local company databases, logs and credentials are not published with the source.
+The local `torrent_data.zip` archive is not included in the repository; obtain/prepare the required data
+separately. Do not commit company databases, passwords, API keys or `.env` files.
