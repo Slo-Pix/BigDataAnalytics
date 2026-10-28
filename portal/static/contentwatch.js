@@ -21,10 +21,10 @@ const icons = {
 };
 const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name] || icons.eye}</svg>`;
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const displayLabel = value => String(value ?? "").replaceAll("_", " ").replace(/\b[a-z]/g, letter => letter.toUpperCase());
+const displayLabel = value => value === "ok" ? "OK" : String(value ?? "").replaceAll("_", " ").replace(/\b[a-z]/g, letter => letter.toUpperCase());
 const number = value => value == null ? "—" : new Intl.NumberFormat("en").format(value);
 const short = value => new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value);
-const categoryName = { movie: "Movie", tv: "TV series", game: "Game" };
+const categoryName = { movie: "Movie", tv: "TV Series", game: "Game" };
 const date = value => value ? new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "Not available";
 const brand = () => '<a class="brand" href="#/" aria-label="ExposureIQ"><span class="brand-name">Exposure<span class="brand-iq">IQ</span></span></a>';
 const btn = (label, href, kind = "", arrow = false) => `<a class="button ${kind}" href="${href}">${label}${arrow ? `<span class="arrow">↗</span>` : ""}</a>`;
@@ -109,21 +109,19 @@ function about() {
   <section class="section split"><div><h2>A billion-row foundation.<br>A carefully scoped view.</h2></div><div>${step("01", "Historical, not universal", "The listing catalogue ends in May 2023; the main tracker collection was on 10 October 2026. A missing record is not proof of no exposure.")}${step("02", "Observations, not people", "Seeders and leechers are tracker-reported counts. They do not establish unique users, downloads, infringement, or lost revenue.")}${step("03", "Traceable, not overclaimed", "Every record includes a hash and observation window. Matches may be imperfect; validate them before making decisions.")}</div></section>
   `, "about");
 }
-const workLinks = [["portfolio", "film", "Company catalogue"], ["titlecheck", "search", "Check live seeders"], ["cases", "report", "Investigations"], ["alerts", "bell", "Alerts & rules"], ["companyreports", "report", "Company reports"], ["live", "eye", "Live pipeline & SQL"], ["explorer", "layers", "Research catalogue"], ["watchlist", "bookmark", "Personal watchlist"], ["team", "settings", "Team & API"], ["audit", "report", "Audit history"], ["health", "grid", "System health"]];
+const workLinks = [["portfolio", "film", "Company Catalogue"], ["titlecheck", "search", "Check Live Seeders"], ["cases", "report", "Investigations"], ["alerts", "bell", "Alerts & Rules"], ["companyreports", "report", "Company Reports"], ["live", "eye", "Live Pipeline & SQL"], ["explorer", "layers", "Research Catalogue"], ["watchlist", "bookmark", "Personal Watchlist"], ["team", "settings", "Team & API"], ["audit", "report", "Audit History"], ["health", "grid", "System Health"]];
 function workShell(content, active) {
+  const pageName = workLinks.find(([path]) => path === active)?.[2] || { workspace: "Overview", activity: "Review Queue", reports: "Reports & Exports", settings: "Workspace & Data" }[active] || displayLabel(active);
   return `<div class="frame"><div class="workspace">
     <aside class="work-sidebar">${brand()}
       <div class="company"><span class="avatar">IQ</span><div><strong>${esc(companySession.actor?.company || "Company workspace")}</strong><small>${esc(companySession.actor?.name)} · ${esc(displayLabel(companySession.actor?.role))}</small></div></div>
       <div class="nav-label">Intelligence workspace</div>
       <nav class="work-nav" aria-label="Workspace navigation">${workLinks.filter(([path]) => !["team", "audit", "health"].includes(path) || adminRole()).map(([path, symbol, label]) => `<a href="#/${path}" ${active === path ? 'class="active" aria-current="page"' : ""}>${icon(symbol)}${label}</a>`).join("")}</nav>
-      <div class="sidebar-bottom"><div class="nav-label">Your workspace</div><nav class="work-nav">
-        <a href="#/settings" ${active === "settings" ? 'class="active" aria-current="page"' : ""}>${icon("settings")}Settings & data</a>
-        <a href="#/">${icon("arrow")}Back to website</a>
-      </nav><button class="button outline small" data-company-action="logout">Sign out</button></div>
+      <div class="sidebar-bottom"><button class="button outline small" data-company-action="logout">Sign out</button></div>
     </aside>
     <main id="main" class="work-main" tabindex="-1">
-      <header class="work-topbar"><div>Workspace <span>/</span> ${esc(active === "workspace" ? "Overview" : active.charAt(0).toUpperCase() + active.slice(1))}</div>
-        <div>${["live", "explorer", "watchlist", "activity", "reports", "workspace"].includes(active) ? `<span class="badge"><span class="dot"></span>${active === "live" ? "Shared live pipeline" : "Historical dataset"}</span>` : ""}<a class="avatar" href="#/settings" aria-label="Workspace settings">IQ</a></div>
+      <header class="work-topbar"><div>Workspace <span>/</span> ${esc(pageName)}</div>
+        <div>${["live", "explorer", "watchlist", "activity", "reports", "workspace"].includes(active) ? `<span class="badge"><span class="dot"></span>${active === "live" ? "Shared live pipeline" : "Historical dataset"}</span>` : ""}</div>
       </header>${state.storageError ? `<div class="notice error" role="alert">${esc(state.storageError)}</div>` : ""}${content}
     </main></div></div>`;
 }
@@ -140,7 +138,7 @@ async function fetchCatalogue(params = {}, signal) {
   return response.json();
 }
 function errorPanel(error) { return `<div class="notice error" role="alert">${icon("info")}<div>${esc(error.message)}<br><button class="button small outline mt" data-action="retry">Try again</button></div></div>`; }
-function loading() { return '<div class="loading" role="status"><span class="spinner"></span>Bringing your catalogue into focus…</div>'; }
+function loading() { return '<div class="loading" role="status"><span class="spinner"></span>Loading Workspace Data…</div>'; }
 function table(rows, removable = false) {
   if (!rows.length) return `<div class="empty-state">${icon("search")}<h2>Nothing in this view yet.</h2><p>Try a broader search or add records from the catalogue.</p></div>`;
   return `<div class="table-wrap"><table><thead><tr><th>Torrent record / matched title</th><th>Category</th><th>Upload year</th><th class="numeric">Median seeders</th><th class="numeric">Median leechers</th><th>${removable ? "Remove" : "Save"}</th></tr></thead><tbody>${rows.map(row => `<tr><td><button class="title-button" data-detail="${esc(row.infohash)}">${esc(row.display_title || "Untitled record")}</button><span class="title-meta">${esc(row.infohash.slice(0, 12))}… · ${row.last_slot ? esc(date(row.last_slot)) : "No timestamp"}</span></td><td><span class="badge ${esc(row.category)}">${esc(categoryName[row.category] || row.category)}</span></td><td>${number(row.added_year)}</td><td class="numeric">${number(row.seeders_median)}</td><td class="numeric">${number(row.leechers_median)}</td><td><button class="icon-button ${state.saved.some(item => item.infohash === row.infohash) ? "saved" : ""}" data-save="${esc(row.infohash)}" aria-label="${removable ? "Remove from" : state.saved.some(item => item.infohash === row.infohash) ? "Remove from" : "Add to"} watchlist: ${esc(row.display_title)}" aria-pressed="${state.saved.some(item => item.infohash === row.infohash)}">${icon(removable ? "close" : "bookmark")}</button></td></tr>`).join("")}</tbody></table></div>`;
@@ -258,7 +256,7 @@ async function render() {
   document.querySelector("#detail").close();
   const pages = { home, platform, pricing, contact, about, watchlist, activity: review, reports, settings };
   const titles = { home: "See the bigger picture", platform: "The platform", pricing: "Plans & pilots", contact: "Let’s talk", about: "Data & methodology", workspace: "Overview", live: "Live monitoring & queries", explorer: "Catalogue explorer", watchlist: "Your watchlist", activity: "Review queue", reports: "Reports", settings: "Workspace & data" };
-  document.title = `ExposureIQ — ${titles[route] || "Page not found"}`;
+  document.title = `ExposureIQ — ${displayLabel(titles[route] || "Page Not Found")}`;
   if (["login", "register", "join"].includes(route)) { accountPage(route); return; }
   if (route !== "home" && !await requireCompany(signal)) return;
   if (signal.aborted) return;

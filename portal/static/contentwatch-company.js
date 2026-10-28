@@ -24,7 +24,7 @@ const companyMessage = (message, bad = false) => {
 };
 const companyNotice = () => '<div id="company-message" hidden role="status"></div>';
 const valueInput = (name, label, type = "text", required = true, extra = "") => `<label class="field">${label}<input name="${name}" type="${type}" ${required ? "required" : ""} ${extra}></label>`;
-const companyTable = (headers, rows) => rows.length ? `<div class="table-wrap"><table><thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : '<div class="empty-state">No records yet. Start with the actions above.</div>';
+const companyTable = (headers, rows) => rows.length ? `<div class="table-wrap"><table><thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : '<div class="empty-state"><h3>No Records Yet</h3><p>Records will appear here as your team uses this workspace.</p></div>';
 
 async function requireCompany(signal) {
   try {
@@ -42,7 +42,7 @@ async function requireCompany(signal) {
 }
 
 function accountPage(mode) {
-  document.title = `ExposureIQ — ${mode === "login" ? "Sign in" : "Create company account"}`;
+  document.title = `ExposureIQ — ${mode === "login" ? "Sign In" : mode === "join" ? "Join Your Team" : "Create Company Account"}`;
   const join = mode === "join", register = mode === "register" || join;
   const token = new URLSearchParams(location.hash.split("?")[1] || "").get("token") || "";
   root.innerHTML = publicShell(`<section class="section auth-panel"><div>${eyebrow("Your company. Your workspace.")}<h1>${join ? "Join your team." : register ? "Create your workspace." : "Welcome back."}</h1></div><div>${companyNotice()}<form id="account-form" data-mode="${mode}">
@@ -57,7 +57,7 @@ function accountPage(mode) {
 
 async function companyPage(route, signal) {
   companySession.route = route;
-  const names = { portfolio: "Company catalogue", titlecheck: "Title-level live check", cases: "Investigations", alerts: "Alerts & rules", companyreports: "Company reports", team: "Team & API access", audit: "Audit history", health: "System health" };
+  const names = { portfolio: "Company Catalogue", titlecheck: "Title-Level Live Check", cases: "Investigations", alerts: "Alerts & Rules", companyreports: "Company Reports", team: "Team & API Access", audit: "Audit History", health: "System Health" };
   document.title = `ExposureIQ — ${names[route]}`;
   root.innerHTML = workShell(heading(names[route]) + companyNotice() + '<div id="company-content">' + loading() + "</div>", route);
   try {
@@ -69,10 +69,26 @@ async function companyPage(route, signal) {
     else if (route === "team") await renderTeam(signal);
     else if (route === "audit") {
       const data = await companyApi("/api/company/audit", {}, signal);
-      if (!signal.aborted) document.querySelector("#company-content").innerHTML = `<section class="panel">${companyTable(["When", "Action", "Entity", "Details"], data.rows.map(row => [esc(date(row.created_at)), esc(row.action), esc(row.entity), esc(row.detail)]))}</section>`;
+      if (!signal.aborted) document.querySelector("#company-content").innerHTML = `<section class="panel">${companyTable(["When", "Action", "Entity", "Details"], data.rows.map(row => [esc(date(row.created_at)), esc(displayLabel(row.action.replaceAll(".", " · "))), esc(displayLabel(row.entity)), esc(row.detail)]))}</section>`;
     } else if (route === "health") {
       const data = await companyApi("/api/health/details", {}, signal);
-      if (!signal.aborted) document.querySelector("#company-content").innerHTML = `<section class="panel"><h2>${esc(displayLabel(data.status))} · local pilot</h2><dl class="detail-grid"><div><dt>Company database</dt><dd>${number(data.database_bytes)} bytes</dd></div><div><dt>Maintenance</dt><dd>${esc(data.maintenance_error || "No reported errors")}</dd></div><div><dt>Email delivery</dt><dd>${data.email_configured ? "Configured" : "Not configured; alerts remain in-app"}</dd></div><div><dt>Webhook delivery</dt><dd>${data.webhook_configured ? "Configured" : "Not configured"}</dd></div></dl><p class="fineprint">The local Kafka/Spark collector is shared infrastructure controlled by company administrators. Private portfolio, cases, alerts and reports are separated by organisation. Back up the company database using the documented management command.</p><a class="button outline mt" href="/docs" target="_blank" rel="noopener">Open API documentation ↗</a></section>`;
+      if (!signal.aborted) {
+        const healthy = data.status === "ok" && !data.maintenance_error;
+        document.querySelector("#company-content").innerHTML = `<section class="panel health-panel">
+          <div class="health-summary">
+            <span class="health-icon">${icon(healthy ? "check" : "info")}</span>
+            <div><h2>Workspace Health</h2><p>Database, maintenance and notification configuration.</p></div>
+            <span class="badge ${healthy ? "health-ok" : "health-warning"}" role="status">${healthy ? "Operational" : data.status === "ok" ? "Needs Attention" : esc(displayLabel(data.status))}</span>
+          </div>
+          <dl class="health-grid">
+            <div class="health-card"><dt>${icon("layers")}Company Database</dt><dd><strong>${number(data.database_bytes)} <span class="health-unit">Bytes</span></strong><p>Storage used by the company database.</p></dd></div>
+            <div class="health-card"><dt>${icon("settings")}Background Maintenance</dt><dd><strong>${data.maintenance_error ? "Needs Attention" : "No Reported Errors"}</strong><p ${data.maintenance_error ? 'class="health-error" role="alert"' : ""}>${esc(data.maintenance_error || "No background maintenance errors reported.")}</p></dd></div>
+            <div class="health-card"><dt>${icon("bell")}Email Delivery</dt><dd><strong>${data.email_configured ? "Configured" : "Not Configured"}</strong><p>${data.email_configured ? "Check individual alerts for delivery results." : "Email is not set up. In-app alerts remain available."}</p></dd></div>
+            <div class="health-card"><dt>${icon("layers")}Webhook Delivery</dt><dd><strong>${data.webhook_configured ? "Configured" : "Not Configured"}</strong><p>${data.webhook_configured ? "Check individual alerts for delivery results." : "An external notification endpoint is not set up."}</p></dd></div>
+          </dl>
+          <div class="health-actions"><a class="button outline" href="/docs" target="_blank" rel="noopener">Open API Documentation ↗</a><a class="button outline" href="#/alerts">View Alerts & Rules</a></div>
+        </section>`;
+      }
     }
   } catch (error) {
     if (!signal.aborted) document.querySelector("#company-content").innerHTML = errorPanel(error);
@@ -84,19 +100,19 @@ async function renderPortfolio(signal) {
   if (signal.aborted) return;
   companySession.portfolio = data.rows;
   document.querySelector("#company-content").innerHTML = `<section class="panel"><div class="panel-head"><div><h2>Owned or represented titles</h2><p>Verify matches and your rights before investigating. CSV imports stay pending until approved.</p></div><a class="button outline small" href="#/titlecheck">Find a title ↗</a></div>
-    ${editorRole() ? `<form id="portfolio-import" class="live-controls"><label class="field">Import CSV (title, category, optional external_id)<input name="file" type="file" accept=".csv,text/csv" required></label><button class="button" type="submit">Import for review</button></form><button class="button outline small mt" data-company-action="csv-template">Download CSV template</button>` : ""}
-    <p class="fineprint">Up to 200 rows per import. Categories: movie, tv, game. An identifier improves matching but does not establish ownership. Latest 200 portfolio records displayed.</p>
+    ${editorRole() ? `<form id="portfolio-import" class="live-controls"><label class="field">Import Catalogue CSV<input name="file" type="file" accept=".csv,text/csv" required></label><button class="button" type="submit">Import for review</button></form><button class="button outline small mt" data-company-action="csv-template">Download CSV template</button>` : ""}
+    <p class="fineprint">Import up to 200 titles at a time. Categories: <code>movie</code>, <code>tv</code> or <code>game</code>. The optional <code>external_id</code> helps matching but does not verify ownership. Showing the latest 200 catalogue entries.</p>
     ${companyTable(["Title", "Category", "Match status", "Actions"], data.rows.map(row => {
       const candidates = Array.isArray(row.candidates) ? row.candidates : [];
-      return [esc(row.title), esc(row.category), esc(displayLabel(row.status)), editorRole() ?
+      return [esc(row.title), esc(categoryName[row.category] || displayLabel(row.category)), esc(displayLabel(row.status)), editorRole() ?
         `${row.status === "approved" ? `<button class="button small outline" data-portfolio-check="${row.id}">Check seeders</button> <button class="button small outline" data-portfolio-case="${row.id}">Investigate</button>` :
-          `<form class="approve-form live-controls" data-id="${row.id}"><label class="field">Candidate match<select name="key" required><option value="">Select a verified match</option>${candidates.map(candidate => `<option value="${esc(candidate.key)}">${esc(candidate.title)} (${esc(candidate.category)})</option>`).join("")}</select></label><button class="button small" type="submit">Approve</button></form><a class="button small outline" href="#/titlecheck">Search for a better match</a>`}
+          `<form class="approve-form live-controls" data-id="${row.id}"><label class="field">Candidate match<select name="key" required><option value="">Select a Verified Match</option>${candidates.map(candidate => `<option value="${esc(candidate.key)}">${esc(candidate.title)} (${esc(categoryName[candidate.category] || displayLabel(candidate.category))})</option>`).join("")}</select></label><button class="button small" type="submit">Approve</button></form><a class="button small outline" href="#/titlecheck">Search for a better match</a>`}
           <button class="button small outline" data-portfolio-remove="${row.id}">Remove</button>` : "Read-only"];
     }))}</section>`;
 }
 
 async function renderTitleSearch(signal) {
-  document.querySelector("#company-content").innerHTML = `<section class="panel"><h2>What would you like to check?</h2><p class="fineprint">Search a movie, TV series or game, or use an IMDb/Steam identifier. Only catalogue-matched hashes can be checked; new releases may not be represented.</p><form id="title-search-form" class="filters"><label class="field search">Title or identifier<input name="q" minlength="2" maxlength="150" required placeholder="Interstellar, The Sopranos, or a Steam ID"></label><label class="field">Content type<select name="category"><option value="all">All content</option><option value="movie">Movies</option><option value="tv">Television</option><option value="game">Games</option></select></label><button class="button" type="submit">Find matches</button></form><div id="title-search-results"></div></section><div id="title-check-results"></div>`;
+  document.querySelector("#company-content").innerHTML = `<section class="panel"><h2>What would you like to check?</h2><p class="fineprint">Search a movie, TV series or game, or use an IMDb/Steam identifier. Only catalogue-matched hashes can be checked; new releases may not be represented.</p><form id="title-search-form" class="filters"><label class="field search">Title or identifier<input name="q" minlength="2" maxlength="150" required placeholder="Interstellar, The Sopranos, or a Steam ID"></label><label class="field">Content type<select name="category"><option value="all">All Content</option><option value="movie">Movies</option><option value="tv">Television</option><option value="game">Games</option></select></label><button class="button" type="submit">Find matches</button></form><div id="title-search-results"></div></section><div id="title-check-results"></div>`;
   const history = document.createElement("section");
   history.className = "panel";
   history.innerHTML = "<h2>Saved company checks</h2>" + loading();
@@ -113,7 +129,7 @@ async function runTitleCheck(body) {
     const result = await companyPost("/api/titles/check", body);
     companySession.result = result;
     const target = document.querySelector("#title-check-results");
-    const html = `<section class="panel"><div class="panel-head"><div><h2>${esc(result.title)}</h2><p>Checked ${esc(date(result.checked_at))}</p></div><button class="button outline small" data-company-action="export-check">${icon("download")}Export observations</button></div><div class="stats">${stat("Largest observed swarm", result.max_seeders === null ? "Unavailable" : number(result.max_seeders), "Max seeders reported for one hash on one tracker", "eye", true)}${stat("Responding trackers", `${result.responding_trackers}/${result.expected_trackers}`, "Failures are not zero counts", "layers")}${stat("Sampled hashes", number(result.sampled_hashes), `Of ${number(result.matched_hashes)} known matches`, "grid")}${stat("Observation mode", result.fresh ? "Fresh" : "Unavailable", "On-demand public UDP tracker queries", "bell")}</div><div class="notice">${esc(result.notice)}</div>${result.errors.map(error => `<div class="notice error">${esc(error.tracker)}: ${esc(error.message)}</div>`).join("")}${companyTable(["Torrent hash", "Tracker", "Seeders", "Leechers", "Observed"], result.observations.map(row => [esc(row.infohash), esc(row.tracker), number(row.seeders), number(row.leechers), esc(date(row.checked_at))]))}<p class="fineprint">Use these observations to prioritise review. Counts overlap across trackers and releases and do not establish unique downloads, infringement, or revenue loss. TV results may include several seasons/episodes; verify each record.</p></section>`;
+    const html = `<section class="panel title-check-result"><div class="panel-head"><div><h2>${esc(result.title)}</h2><p>Checked ${esc(date(result.checked_at))}</p></div><button class="button outline small" data-company-action="export-check">${icon("download")}Export observations</button></div><div class="stats">${stat("Largest observed swarm", result.max_seeders === null ? "Unavailable" : number(result.max_seeders), "Max seeders reported for one hash on one tracker", "eye", true)}${stat("Responding trackers", `${result.responding_trackers}/${result.expected_trackers}`, "Failures are not zero counts", "layers")}${stat("Sampled hashes", number(result.sampled_hashes), `Of ${number(result.matched_hashes)} known matches`, "grid")}${stat("Observation mode", result.fresh ? "Fresh" : "Unavailable", "On-demand public UDP tracker queries", "bell")}</div><div class="notice">${esc(result.notice)}</div>${result.errors.map(error => `<div class="notice error">${esc(error.tracker)}: ${esc(error.message)}</div>`).join("")}${companyTable(["Torrent hash", "Tracker", "Seeders", "Leechers", "Observed"], result.observations.map(row => [esc(row.infohash), esc(row.tracker), number(row.seeders), number(row.leechers), esc(date(row.checked_at))]))}<p class="fineprint">Use these observations to prioritise review. Counts overlap across trackers and releases and do not establish unique downloads, infringement, or revenue loss. TV results may include several seasons/episodes; verify each record.</p></section>`;
     if (target) { target.innerHTML = html; target.scrollIntoView({ behavior: "smooth", block: "start" }); }
     else {
       document.querySelector("#detail-content").innerHTML = `<button class="icon-button" data-action="close-detail" aria-label="Close">${icon("close")}</button>${html}`;
@@ -153,7 +169,7 @@ async function openCase(id) {
 async function renderAlerts(signal) {
   const [alerts, rules, portfolio] = await Promise.all([companyApi("/api/company/alerts", {}, signal), companyApi("/api/company/rules", {}, signal), companyApi("/api/company/portfolio", {}, signal)]);
   if (signal.aborted) return;
-  document.querySelector("#company-content").innerHTML = `<section class="panel"><h2>Explainable alert rules</h2><p class="fineprint">Rules evaluate saved portfolio checks only when a tracker actually responds. Trigger metric: maximum reported seeders for a single hash/tracker. One unresolved alert per rule/title prevents duplicates. Optional delivery runs once per minute when configured; failures remain visible.</p>${editorRole() ? `<form id="rule-create" class="form-grid">${valueInput("name", "Rule name", "text", true, 'maxlength="100"')}<label class="field">Title scope<select name="portfolio_id"><option value="">All approved company titles</option>${portfolio.rows.filter(row => row.status === "approved").map(row => `<option value="${row.id}">${esc(row.title)}</option>`).join("")}</select></label>${valueInput("threshold", "Trigger at or above this seeder count", "number", true, 'min="0" max="100000000" value="10"')}<button class="button" type="submit">Create rule</button></form>` : ""}
+  document.querySelector("#company-content").innerHTML = `<section class="panel"><h2>Explainable alert rules</h2><p class="fineprint">Rules evaluate saved portfolio checks only when a tracker actually responds. Trigger metric: maximum reported seeders for a single hash/tracker. One unresolved alert per rule/title prevents duplicates. Optional delivery runs once per minute when configured; failures remain visible.</p>${editorRole() ? `<form id="rule-create" class="form-grid">${valueInput("name", "Rule name", "text", true, 'maxlength="100"')}<label class="field">Title scope<select name="portfolio_id"><option value="">All Approved Company Titles</option>${portfolio.rows.filter(row => row.status === "approved").map(row => `<option value="${row.id}">${esc(row.title)}</option>`).join("")}</select></label>${valueInput("threshold", "Trigger at or above this seeder count", "number", true, 'min="0" max="100000000" value="10"')}<button class="button" type="submit">Create rule</button></form>` : ""}
     ${companyTable(["Rule", "Threshold", "Enabled", "Action"], rules.rows.map(row => [esc(row.name), number(row.threshold), row.enabled ? "Yes" : "No", editorRole() ? `<button class="button small outline" data-rule-toggle="${row.id}" data-enabled="${row.enabled ? "false" : "true"}">${row.enabled ? "Disable" : "Enable"}</button>` : "Read-only"]))}</section>
     <section class="panel"><h2>Company alerts</h2>${companyTable(["Alert", "Status", "Delivery", "Action"], alerts.rows.map(row => [esc(row.message || row.title), esc(displayLabel(row.status)), `${esc(displayLabel(row.delivery_status || "In-app"))}${(row.deliveries || []).map(delivery => `<p class="fineprint">${esc(displayLabel(delivery.channel))}: ${esc(displayLabel(delivery.status))} ${esc(delivery.error || "")}</p>`).join("")}${editorRole() && row.deliveries?.some(delivery => ["failed", "unconfigured"].includes(delivery.status)) ? `<button class="button small outline" data-alert-retry="${row.id}">Retry delivery</button>` : ""}`, editorRole() ? `<form class="alert-update live-controls" data-id="${row.id}"><select name="status" aria-label="Alert status">${["new", "reviewed", "resolved"].map(status => `<option value="${status}" ${row.status === status ? "selected" : ""}>${displayLabel(status)}</option>`).join("")}</select><button class="button small outline">Save</button></form>` : "Read-only"]))}</section>`;
 }
@@ -197,7 +213,7 @@ document.addEventListener("submit", async event => {
     } else if (form.id === "title-search-form") {
       const result = await companyApi("/api/titles?" + new URLSearchParams(data));
       companySession.search = result.rows;
-      document.querySelector("#title-search-results").innerHTML = `<p class="fineprint">${esc(result.notice)}</p>${companyTable(["Matched title", "Category", "Known hashes", "Action"], result.rows.map((row, i) => [esc(row.title), esc(row.category), number(row.matched_hashes), editorRole() ? `<button type="button" class="button outline small" data-title-check="${i}">Check now</button> <button type="button" class="button small" data-title-add="${i}">Add to catalogue</button>` : "Read-only"]))}`;
+      document.querySelector("#title-search-results").innerHTML = `<p class="fineprint">${esc(result.notice)}</p>${companyTable(["Matched title", "Category", "Known hashes", "Action"], result.rows.map((row, i) => [esc(row.title), esc(categoryName[row.category] || displayLabel(row.category)), number(row.matched_hashes), editorRole() ? `<button type="button" class="button outline small" data-title-check="${i}">Check now</button> <button type="button" class="button small" data-title-add="${i}">Add to catalogue</button>` : "Read-only"]))}`;
     } else if (form.id === "case-create") {
       await companyPost("/api/company/cases", { ...data, portfolio_id: Number(data.portfolio_id), assignee_id: data.assignee_id ? Number(data.assignee_id) : null }); await render();
     } else if (form.id === "case-update") {
