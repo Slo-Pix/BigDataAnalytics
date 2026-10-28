@@ -55,9 +55,9 @@ function livePage(signal) {
       <section class="panel"><div class="panel-head"><div><h2>Current serving snapshot</h2><p>Highest tracker-reported counts across retained records</p></div>${icon("eye")}</div><div id="live-top" class="empty-state">Start monitoring to populate this view.</div></section>
     </div>
     <section class="panel">
-      <div class="panel-head"><div><h2>Query your live data</h2><p>Read-only PostgreSQL · 5-second timeout · at most 200 returned rows</p></div><span class="badge">SQL workspace</span></div>
+      <div class="panel-head"><div><h2>Query your live data</h2><p>Read-only PostgreSQL · 5-second timeout · at most 200 returned rows</p></div></div>
       <div class="live-presets" aria-label="Example queries">${Object.entries(livePresets).map(([key, preset]) => `<button class="button outline small" type="button" data-live-preset="${key}">${preset.name}</button>`).join("")}</div>
-      <form id="live-query-form"><label class="field">SQL query<textarea id="live-sql" name="sql" required maxlength="10000" spellcheck="false">${esc(liveViewState.sql)}</textarea></label>
+      <form id="live-query-form"><label class="field">Query<textarea id="live-sql" name="sql" required maxlength="10000" spellcheck="false">${esc(liveViewState.sql)}</textarea></label>
         <div class="live-query-actions"><button id="live-run-query" class="button" type="submit">${icon("search")}Run query</button><button id="live-export" class="button outline" type="button" data-action="live-export" disabled>${icon("download")}Export results</button><span class="fineprint no-margin">Queries run on click, not on each refresh.</span></div>
       </form>
       <details class="live-schema"><summary>Available views & metric definitions</summary><dl>
