@@ -9,3 +9,10 @@ spark-warehouse/
 metastore_db/
 derby.log
 .ruff_cache/
+torrent_data.zip
+report/*.aux
+report/*.fdb_latexmk
+report/*.fls
+report/*.log
+report/*.out
+report/*.toc

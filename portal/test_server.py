@@ -9,7 +9,16 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from portal.accounts import AccountStore
-from portal.server import protect_workspace
+from portal.server import protect_workspace, report
+
+
+class ReportTests(unittest.TestCase):
+    def test_report_serves_the_current_exposureiq_pdf(self):
+        response = report()
+        self.assertEqual(response.media_type, "application/pdf")
+        self.assertEqual(response.path.name, "ExposureIQ_Report.pdf")
+        with response.path.open("rb") as document:
+            self.assertEqual(document.read(5), b"%PDF-")
 
 
 class MiddlewareTests(unittest.IsolatedAsyncioTestCase):

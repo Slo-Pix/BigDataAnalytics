@@ -83,7 +83,7 @@ Downloads are saved through the browser to the user's chosen destination, not in
   the populated data lake or company accounts.
 
 For startup, role permissions, backups and demo instructions see the
-[project README](../README.md) and [company-pilot guide](../docs/CWATCH_PILOT.md).
+[project README](../README.md) and [company-pilot guide](../docs/EXPOSUREIQ_PILOT.md).
 
 ## Known data quirks
 - **steam/games.csv** (Kaggle fronkongames, v53, 125,855 games): the header has 39 names but every row has 40

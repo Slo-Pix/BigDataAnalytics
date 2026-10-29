@@ -6,9 +6,9 @@ A company-facing local pilot for monitoring movie, television and game torrent e
 A Lambda-architecture (batch + streaming) pipeline over **1.38 billion rows** of public BitTorrent, film, TV,
 game and Wikipedia metadata. Metadata only: no copyrighted content is downloaded and no peer IP addresses are stored.
 
-**Report:** [report/CS404_Torrent_Analytics_Report.pdf](report/CS404_Torrent_Analytics_Report.pdf) (19 pages) ·
+**Report:** [ExposureIQ project report](report/ExposureIQ_Report.pdf) ([editable source](report/ExposureIQ_Report.tex)) ·
 **Presentation:** [showcase/Big Data Analytics.pdf](showcase/Big%20Data%20Analytics.pdf) ·
-**Schema:** [docs/schema.md](docs/schema.md) · **Build log:** [PHASES.md](PHASES.md)
+**Schema:** [docs/schema.md](docs/schema.md) · **Report build:** [report/README.md](report/README.md)
 
 ## Start the Existing Product
 
@@ -125,7 +125,7 @@ on-demand title-level seeder checks, saved observation history, assigned investi
 threshold alerts, CSV/JSON/print-to-PDF reports, daily/weekly summary snapshots, invitations and roles,
 read-only API keys and audit history. Operator health remains available through backend API endpoints.
 Email/webhook alert delivery is optional and
-must be configured by the operator. [Operator and user-test guide](docs/CWATCH_PILOT.md).
+must be configured by the operator. [Operator and user-test guide](docs/EXPOSUREIQ_PILOT.md).
 
 ### Company Catalogue and Demo Workflow
 
@@ -269,7 +269,7 @@ dashboards/  results → PostgreSQL loader; Grafana live, demo and batch dashboa
 demo/        live classroom demo (start/stop), interactive Spark SQL console, prepared queries
 portal/      ExposureIQ: FastAPI, company SQLite store, public site, authenticated workspace, legacy research UI
 infra/       Docker Compose, PostgreSQL schema, Grafana provisioning + dashboard JSON, scraper image
-report/      final report (PDF + HTML source) and figures
+report/      ExposureIQ report (PDF + LaTeX source), build instructions and regenerated research figures
 docs/        dataset schema and company-pilot operator guide
 showcase/    presentation slides (PDF)
 ```
@@ -277,3 +277,15 @@ showcase/    presentation slides (PDF)
 Research datasets, local company databases, logs and credentials are not published with the source.
 The local `torrent_data.zip` archive is not included in the repository; obtain/prepare the required data
 separately. Do not commit company databases, passwords, API keys or `.env` files.
+
+ExposureIQ is the product name. Existing `CWATCH_*` settings, `/api/contentwatch` routes, the `cwatch`
+database/schema and stream paths are compatibility identifiers, not a second product. They are retained
+to avoid breaking local accounts, stored observations, integrations and checkpoints.
+
+## Before deleting a local checkout
+
+A successful Git push backs up tracked source, documentation, reports and saved research-result CSVs.
+It does **not** back up the ignored data lake, company SQLite database, `.env`, browser watchlists,
+`torrent_data.zip`, or Docker volumes containing Kafka/PostgreSQL/Grafana state. Back up any required
+private state separately before deleting the checkout; see [the operator guide](docs/EXPOSUREIQ_PILOT.md#backup-and-restore).
+No dataset or cache deletion is part of the report rebuild.

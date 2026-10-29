@@ -402,7 +402,7 @@ app.mount("/figures", StaticFiles(directory=ROOT / "report" / "figures"), name="
 
 @app.get("/report.pdf")
 def report():
-    return FileResponse(ROOT / "report" / "CS404_Torrent_Analytics_Report.pdf", media_type="application/pdf")
+    return FileResponse(ROOT / "report" / "ExposureIQ_Report.pdf", media_type="application/pdf")
 
 
 app.mount("/", StaticFiles(directory=STATIC, html=True), name="static")
